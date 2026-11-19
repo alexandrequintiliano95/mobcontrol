@@ -103,3 +103,7 @@ button.ghost, button.toggle { border: 2px solid rgba(255, 255, 255, 0.25); }
 .stars.show span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes star { to { transform: scale(1); opacity: 1; } }
 button.big { max-width: calc(100% - 16px); font-size: clamp(17px, 5.5vw, 22px); white-space: nowrap; }
+
+.progress-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 5px; }
+.progress-row .progress { margin: 0; flex: 1; max-width: 80%; }
+#hud-progress-text { min-width: 34px; font-size: 13px; font-weight: 900; color: var(--accent); text-shadow: 0 1px 3px #000a; }

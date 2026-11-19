@@ -50,7 +50,7 @@ export function createUi(doc) {
       setText('hud-level', `Operação ${state.level}`);
       setText('hud-weapon', WEAPONS[state.weapon]?.label ?? '');
       const pct = `${Math.round(Math.max(0, Math.min(1, state.progress)) * 100)}%`;
-      if (last.progress !== pct) { last.progress = pct; $('hud-progress').style.width = pct; }
+      if (last.progress !== pct) { last.progress = pct; $('hud-progress').style.width = pct; $('hud-progress-text').textContent = pct; }
       $('hud-boss').hidden = state.bossHp == null;
       if (state.bossHp != null) $('hud-boss-fill').style.width = `${Math.max(0, state.bossHp) * 100}%`;
     },
