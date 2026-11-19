@@ -47,7 +47,7 @@ export function generateLevel(n) {
     }
     if (i === 1) {
       const side = level.barrels[0].x < 0 ? 1 : -1;
-      level.gates.push({ id: nextId++, side, z, value: -Math.min(10, 4 + Math.floor(n / 4)) });
+      level.gates.push({ id: nextId++, side, z, value: -Math.min(60, 4 + n) });
       lastWasGate = true;
       return;
     }
