@@ -18,6 +18,7 @@ export function createView(container) {
     actors?.dispose();
     for (const e of extras) e.dispose?.();
     world = buildWorld(scene, game.level);
+    stage.setTheme(game.level.number % 2 === 0 ? 'city' : 'desert');
     actors = createActors(scene);
     extras = view.extraFactories.map((make) => make(scene, game));
     camX = game.squad.x * 0.4;

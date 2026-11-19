@@ -82,6 +82,7 @@ export function createProps(scene, game) {
       if (o.hp !== b.lastHp) { b.pulse = 0.09; b.lastHp = o.hp; }
       b.pulse = Math.max(0, b.pulse - dt);
       b.body.scale.setScalar(1 + b.pulse);
+      b.hp.sprite.scale.set(1.5 * (1 + b.pulse * 4), 0.75 * (1 + b.pulse * 4), 1);
       b.hp.set(String(Math.max(1, Math.ceil(o.hp))), b.pulse > 0 ? '#ffe066' : '#ffffff');
       if (b.group.userData.weapon) b.group.userData.weapon.rotation.y = time * 2;
     }

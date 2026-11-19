@@ -4,6 +4,8 @@ import {
   Object3D, Color, DynamicDrawUsage,
 } from 'three';
 import { soldierGeometry, legGeometry, zombieGeometry, zombieLegGeometry } from './geometry.js';
+import { WEAPONS } from '../config.js';
+import { AdditiveBlending, SphereGeometry } from 'three';
 
 const CAP = { soldiers: 360, zombies: 400, bullets: 2000, shadows: 800, bars: 400 };
 const ZOMBIE_LOOK = {
@@ -28,7 +30,8 @@ export function createActors(scene) {
   const soldierLegs = instanced(legGeometry(), lambert, CAP.soldiers * 2);
   const zombieBodies = instanced(zombieGeometry({ legs: false }), lambert, CAP.zombies);
   const zombieLegs = instanced(zombieLegGeometry(), lambert, CAP.zombies * 2);
-  const bullets = instanced(new BoxGeometry(0.07, 0.07, 0.6), new MeshBasicMaterial({ color: 0xffd84d }), CAP.bullets);
+  const bullets = instanced(new BoxGeometry(0.09, 0.09, 0.9), new MeshBasicMaterial({ color: 0xffe27a, transparent: true, opacity: 0.95, blending: AdditiveBlending, depthWrite: false }), CAP.bullets);
+  const flashes = instanced(new SphereGeometry(0.13, 6, 4), new MeshBasicMaterial({ color: 0xffc94d, transparent: true, opacity: 0.9, blending: AdditiveBlending, depthWrite: false }), CAP.soldiers);
   const shadowGeo = new CircleGeometry(0.3, 12).rotateX(-Math.PI / 2);
   const shadows = instanced(shadowGeo, new MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false }), CAP.shadows);
   const barBack = instanced(new PlaneGeometry(0.6, 0.08), new MeshBasicMaterial({ color: 0x2a0d0d, depthTest: false }), CAP.bars);
@@ -36,7 +39,7 @@ export function createActors(scene) {
   barBack.renderOrder = barFill.renderOrder = 5;
   soldierBodies.setColorAt(0, WHITE);
   zombieBodies.setColorAt(0, WHITE);
-  const all = [soldierBodies, soldierLegs, zombieBodies, zombieLegs, bullets, shadows, barBack, barFill];
+  const all = [soldierBodies, soldierLegs, zombieBodies, zombieLegs, bullets, flashes, shadows, barBack, barFill];
   for (const m of all) scene.add(m);
 
   const d = new Object3D();
@@ -73,9 +76,18 @@ export function createActors(scene) {
   function sync(game, time, camera) {
     const minZ = game.squad.z - 12, maxZ = game.squad.z + 80;
     const running = game.phase === 'run' ? 1 : 0.5;
-    let s = 0, sh = 0;
+    let s = 0, sh = 0, f = 0;
+    const period = 1 / WEAPONS[game.squad.weapon].rate;
     for (const sol of game.soldiers) {
       if (s >= CAP.soldiers) break;
+      if (sol.cooldown > period - 0.06 && f < CAP.soldiers) {
+        d.position.set(sol.x + 0.12, 0.62, -sol.z - 0.6);
+        d.rotation.set(0, 0, 0);
+        const fs = 0.8 + Math.random() * 0.6;
+        d.scale.set(fs, fs, fs * 1.6);
+        d.updateMatrix();
+        flashes.setMatrixAt(f++, d.matrix);
+      }
       putFigure(soldierBodies, soldierLegs, s, sol.x, sol.z, 1, time * 13 + sol.id, running, 0, 0.36);
       soldierBodies.setColorAt(s, WHITE);
       sh = putShadow(sh, sol.x, sol.z, 1);
@@ -130,6 +142,7 @@ export function createActors(scene) {
       bullets.setMatrixAt(n++, d.matrix);
     }
     bullets.count = n;
+    flashes.count = f;
     shadows.count = sh;
 
     for (const m of all) {

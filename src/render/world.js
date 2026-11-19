@@ -5,7 +5,7 @@ import {
 } from 'three';
 import { ROAD_HALF } from '../config.js';
 import { createRng } from '../rng.js';
-import { rockGeometry, cactusGeometry, wreckGeometry, barrierGeometry } from './geometry.js';
+import { rockGeometry, cactusGeometry, wreckGeometry, barrierGeometry, ruinGeometry, rubbleGeometry } from './geometry.js';
 
 function roadTexture() {
   const c = document.createElement('canvas');
@@ -45,6 +45,8 @@ function checkerTexture() {
 
 export function buildWorld(scene, level) {
   const group = new Group();
+  // Odd operations run through the desert, even ones through a ruined city.
+  const city = level.number % 2 === 0;
   const start = -30, end = level.length + 60, len = end - start;
   const disposables = [];
   const track = (o) => { disposables.push(o); return o; };
@@ -56,7 +58,7 @@ export function buildWorld(scene, level) {
   road.position.set(0, 0, -(start + len / 2));
   group.add(road);
 
-  const sand = new Mesh(track(new PlaneGeometry(240, len + 120)), track(new MeshLambertMaterial({ color: 0xe0b872 })));
+  const sand = new Mesh(track(new PlaneGeometry(240, len + 120)), track(new MeshLambertMaterial({ color: city ? 0x8b8780 : 0xe0b872 })));
   sand.rotation.x = -Math.PI / 2;
   sand.position.set(0, -0.02, -(start + len / 2));
   group.add(sand);
@@ -87,17 +89,23 @@ export function buildWorld(scene, level) {
 
   // Decorations scattered on the sand.
   const rng = createRng(level.number * 31 + 3);
-  const kinds = [
-    { geometry: rockGeometry(), every: 3.5, scale: [0.6, 2.2] },
-    { geometry: cactusGeometry(), every: 6, scale: [0.8, 1.6] },
-    { geometry: wreckGeometry(), every: 28, scale: [1, 1.2], near: true },
-  ];
+  const kinds = city
+    ? [
+      { geometry: ruinGeometry(), every: 4.5, scale: [1.2, 2.6], far: true },
+      { geometry: rubbleGeometry(), every: 3, scale: [0.8, 1.8] },
+      { geometry: wreckGeometry(), every: 18, scale: [1, 1.2], near: true },
+    ]
+    : [
+      { geometry: rockGeometry(), every: 3.5, scale: [0.6, 2.2] },
+      { geometry: cactusGeometry(), every: 6, scale: [0.8, 1.6] },
+      { geometry: wreckGeometry(), every: 28, scale: [1, 1.2], near: true },
+    ];
   for (const k of kinds) {
     const count = Math.floor(len / k.every);
     const mesh = new InstancedMesh(track(k.geometry), material, count);
     for (let i = 0; i < count; i++) {
       const side = rng.chance(0.5) ? -1 : 1;
-      const dist = k.near ? rng.range(ROAD_HALF + 2, ROAD_HALF + 6) : rng.range(ROAD_HALF + 1.6, 40);
+      const dist = k.near ? rng.range(ROAD_HALF + 2, ROAD_HALF + 6) : k.far ? rng.range(ROAD_HALF + 5, 30) : rng.range(ROAD_HALF + 1.6, 40);
       const s = rng.range(k.scale[0], k.scale[1]);
       dummy.position.set(side * dist, 0, -(start + rng.next() * len));
       dummy.rotation.set(0, rng.range(0, Math.PI * 2), 0);

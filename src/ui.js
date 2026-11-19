@@ -30,10 +30,22 @@ export function createUi(doc) {
       if (screen === 'won') {
         $('won-title').textContent = `OPERAÇÃO ${data.level} CONCLUÍDA!`;
         $('won-detail').textContent = `${data.soldiers} soldados sobreviveram`;
+        const stars = $('won-stars');
+        [...stars.children].forEach((el, i) => el.classList.toggle('on', i < (data.stars ?? 1)));
+        stars.classList.remove('show');
+        void stars.offsetWidth;
+        stars.classList.add('show');
       }
       if (screen === 'lost') $('lost-detail').textContent = `Operação ${data.level}`;
     },
     hud(state) {
+      if (last.count !== undefined && state.count !== last.count) {
+        const el = $('hud-count').parentElement;
+        el.classList.remove('bump', 'hurt');
+        void el.offsetWidth;
+        el.classList.add(state.count > last.count ? 'bump' : 'hurt');
+      }
+      last.count = state.count;
       setText('hud-count', String(state.count));
       setText('hud-level', `Operação ${state.level}`);
       setText('hud-weapon', WEAPONS[state.weapon]?.label ?? '');

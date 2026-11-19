@@ -75,7 +75,7 @@ let game = null;
 // ?level=N only picks the operation to play; it never overwrites saved progress.
 let levelNumber = params.has('level') ? Math.min(MAX_LEVEL, Math.max(1, Math.floor(Number(params.get('level'))) || 1)) : save.level;
 let endTimer = 0;
-let lastShots = 0, lastHits = 0;
+let lastShots = 0, lastHits = 0, peak = 1;
 const clock = { acc: 0 };
 
 function newGame() {
@@ -86,6 +86,7 @@ function newGame() {
   clock.acc = 0;
   lastShots = 0;
   lastHits = 0;
+  peak = 1;
   endTimer = 0;
   view.load(game);
   if (DEBUG) window.__game = game;
@@ -96,7 +97,10 @@ function setState(next) {
   if (next === 'menu') ui.show('menu', { level: levelNumber });
   else if (next === 'playing') ui.show(null);
   else if (next === 'paused') ui.show('pause');
-  else if (next === 'won') ui.show('won', { level: game.level.number, soldiers: game.soldiers.length });
+  else if (next === 'won') {
+    const ratio = game.soldiers.length / peak;
+    ui.show('won', { level: game.level.number, soldiers: game.soldiers.length, stars: ratio >= 0.7 ? 3 : ratio >= 0.35 ? 2 : 1 });
+  }
   else if (next === 'lost') ui.show('lost', { level: game.level.number });
   if (next === 'playing') hooks.onStart();
   else hooks.onPause();
@@ -164,6 +168,7 @@ function afterSteps(events) {
 }
 
 function updateHud() {
+  peak = Math.max(peak, game.soldiers.length);
   ui.hud({
     count: game.soldiers.length,
     level: game.level.number,

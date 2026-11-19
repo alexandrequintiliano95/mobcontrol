@@ -65,6 +65,17 @@ export function soldierGeometry({ legs = true } = {}) {
     part(box(0.1, 0.28, 0.1), c.uniform, 0.23, 0.55, -0.06, -0.6),
     part(box(0.07, 0.08, 0.5), c.gun, 0.12, 0.6, -0.28),
     part(box(0.05, 0.12, 0.06), c.gun, 0.12, 0.53, -0.2),
+    // Tactical vest, belt, pouches, goggles and hands.
+    part(box(0.38, 0.22, 0.27), 0x3a4a5e, 0, 0.56, 0),
+    part(box(0.1, 0.08, 0.05), 0x2b3645, -0.1, 0.5, -0.14),
+    part(box(0.1, 0.08, 0.05), 0x2b3645, 0.1, 0.5, -0.14),
+    part(box(0.39, 0.05, 0.27), 0x5a4630, 0, 0.42, 0),
+    part(box(0.05, 0.03, 0.02), 0xf2b705, 0, 0.42, -0.14),
+    part(box(0.26, 0.06, 0.05), 0x1b1d2a, 0, 0.89, -0.15),
+    part(box(0.09, 0.05, 0.03), 0x7cc4ff, -0.06, 0.89, -0.17),
+    part(box(0.09, 0.05, 0.03), 0x7cc4ff, 0.06, 0.89, -0.17),
+    part(ball(0.05, 6, 4), c.skin, -0.2, 0.6, -0.24),
+    part(ball(0.05, 6, 4), c.skin, 0.2, 0.6, -0.24),
   ];
   if (legs) {
     parts.push(part(box(0.13, 0.3, 0.14), c.pants, -0.09, 0.21, 0), part(box(0.13, 0.3, 0.14), c.pants, 0.09, 0.21, 0));
@@ -83,6 +94,16 @@ export function zombieGeometry({ legs = true, skin = ZOMBIE.skin, shirt = ZOMBIE
     part(box(0.06, 0.04, 0.03), c.eye, 0.08, 0.92, -0.19),
     part(box(0.1, 0.1, 0.46), skin, -0.22, 0.7, -0.2, 0.15),
     part(box(0.1, 0.1, 0.42), skin, 0.22, 0.66, -0.18, 0.3),
+    // Torn shirt, ribs, hair tufts, open mouth and claws.
+    part(box(0.14, 0.14, 0.02), skin, -0.08, 0.62, -0.13, 0.12),
+    part(box(0.12, 0.02, 0.02), 0xd9d2c5, -0.08, 0.66, -0.14, 0.12),
+    part(box(0.12, 0.02, 0.02), 0xd9d2c5, -0.08, 0.61, -0.14, 0.12),
+    part(box(0.1, 0.06, 0.03), 0x7a2020, 0.02, 0.84, -0.2),
+    part(box(0.06, 0.08, 0.06), 0x3b2a1a, -0.06, 1.05, 0, 0.3),
+    part(box(0.06, 0.06, 0.06), 0x3b2a1a, 0.07, 1.04, 0.03, -0.2),
+    part(box(0.12, 0.05, 0.08), skin, -0.22, 0.75, -0.44, 0.15),
+    part(box(0.12, 0.05, 0.08), skin, 0.22, 0.73, -0.4, 0.3),
+    part(box(0.4, 0.08, 0.26), 0x4e4033, 0, 0.38, 0),
   ];
   if (legs) {
     parts.push(part(box(0.14, 0.34, 0.15), c.pants, -0.1, 0.2, 0), part(box(0.14, 0.34, 0.15), c.pants, 0.1, 0.2, 0.03));
@@ -176,4 +197,32 @@ export function wreckGeometry() {
 
 export function barrierGeometry() {
   return mergeColored([part(box(0.3, 0.45, 4), 0xc9c2b4, 0, 0.225, 0), part(box(0.4, 0.08, 4), 0xa39c8e, 0, 0.04, 0)]);
+}
+
+export function ruinGeometry() {
+  // A broken building block: walls, dark windows and a jagged top. Unit footprint, ~3 tall.
+  const wall = 0x9a8f85, dark = 0x2d2a2e, trim = 0x7d736a;
+  const parts = [
+    part(box(2, 2.6, 2), wall, 0, 1.3, 0),
+    part(box(0.9, 0.7, 0.9), wall, -0.5, 2.95, -0.5),
+    part(box(0.7, 0.4, 0.7), wall, 0.55, 2.8, 0.4),
+    part(box(2.04, 0.12, 2.04), trim, 0, 0.9, 0),
+    part(box(2.04, 0.12, 2.04), trim, 0, 1.8, 0),
+  ];
+  for (const y of [0.45, 1.35, 2.25]) {
+    for (const x of [-0.55, 0.05, 0.6]) {
+      parts.push(part(box(0.32, 0.4, 0.04), dark, x, y, -1.01));
+      parts.push(part(box(0.04, 0.4, 0.32), dark, -1.01, y, x));
+      parts.push(part(box(0.04, 0.4, 0.32), dark, 1.01, y, x));
+    }
+  }
+  return mergeColored(parts);
+}
+
+export function rubbleGeometry() {
+  return mergeColored([
+    part(box(0.7, 0.3, 0.5), 0x8c837a, 0, 0.15, 0, 0.2, 0.4, 0.1),
+    part(box(0.5, 0.25, 0.4), 0x6f6760, 0.4, 0.12, 0.3, 0, 1, 0.2),
+    part(box(0.4, 0.2, 0.6), 0xa39a90, -0.35, 0.1, 0.25, 0.1, 0.3, 0),
+  ]);
 }

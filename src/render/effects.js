@@ -1,10 +1,11 @@
 // Explosions, zombie goo, recruit rings, floating numbers and camera shake.
 import {
   InstancedMesh, BoxGeometry, CircleGeometry, RingGeometry, MeshBasicMaterial, Object3D, Color, DynamicDrawUsage,
+  SphereGeometry, AdditiveBlending,
 } from 'three';
 import { createLabel } from './labels.js';
 
-const CAP = { particles: 500, goo: 200, rings: 40, texts: 10 };
+const CAP = { blasts: 30, particles: 700, goo: 200, rings: 40, texts: 10 };
 const FIRE = [0xffd34d, 0xff9f1c, 0xff6b2c, 0x6b6b6b];
 const GOO = [0x7fbf4d, 0x5c9a32, 0xa6d96a];
 
@@ -21,7 +22,10 @@ export function createEffects(scene) {
   const particleMesh = instanced(new BoxGeometry(0.16, 0.16, 0.16), new MeshBasicMaterial(), CAP.particles);
   const gooMesh = instanced(new CircleGeometry(0.45, 10).rotateX(-Math.PI / 2), new MeshBasicMaterial({ transparent: true, opacity: 0.8, depthWrite: false }), CAP.goo);
   const ringMesh = instanced(new RingGeometry(0.35, 0.5, 20).rotateX(-Math.PI / 2), new MeshBasicMaterial({ color: 0xffe14d, transparent: true, opacity: 0.85, depthWrite: false }), CAP.rings, false);
-  const meshes = [particleMesh, gooMesh, ringMesh];
+  const blastMesh = instanced(new SphereGeometry(1, 12, 8), new MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.35, blending: AdditiveBlending, depthWrite: false }), CAP.blasts, false);
+  const meshes = [particleMesh, gooMesh, ringMesh, blastMesh];
+  const blasts = [];
+  const blast = (x, z, size) => { if (blasts.length >= CAP.blasts) blasts.shift(); blasts.push({ x, z: -z, size, life: 0.35 }); };
   for (const m of meshes) scene.add(m);
 
   const particles = [], goo = [], rings = [];
@@ -60,15 +64,18 @@ export function createEffects(scene) {
   fx.handle = (e) => {
     switch (e.type) {
       case 'barrelDestroyed':
-        burst(e.x, e.z, 28, FIRE, 1);
-        fx.shake = Math.max(fx.shake, 0.25);
+        burst(e.x, e.z, 45, FIRE, 1.2);
+        blast(e.x, e.z, 1.8);
+        fx.shake = Math.max(fx.shake, 0.3);
         break;
       case 'barrelCrash':
-        burst(e.x, e.z, 30, FIRE, 1.1);
-        fx.shake = Math.max(fx.shake, 0.55);
+        burst(e.x, e.z, 50, FIRE, 1.3);
+        blast(e.x, e.z, 2.2);
+        fx.shake = Math.max(fx.shake, 0.6);
         break;
       case 'bossKilled':
-        burst(e.x, e.z, 120, FIRE, 2.2, 2);
+        burst(e.x, e.z, 160, FIRE, 2.4, 2);
+        blast(e.x, e.z, 6);
         fx.shake = Math.max(fx.shake, 0.9);
         break;
       case 'zombieKilled':
@@ -142,6 +149,21 @@ export function createEffects(scene) {
       ringMesh.setMatrixAt(n++, d.matrix);
     }
     ringMesh.count = n;
+
+    n = 0;
+    for (let i = blasts.length - 1; i >= 0; i--) {
+      const b = blasts[i];
+      b.life -= dt;
+      if (b.life <= 0) { blasts.splice(i, 1); continue; }
+      const k = 1 - b.life / 0.35, sc = b.size * (0.4 + k);
+      d.position.set(b.x, 0.8, b.z);
+      d.rotation.set(0, 0, 0);
+      d.scale.set(sc, sc * 0.8, sc);
+      d.updateMatrix();
+      blastMesh.setMatrixAt(n++, d.matrix);
+    }
+    blastMesh.count = n;
+
 
     for (const t of texts) {
       if (t.life <= 0) continue;
