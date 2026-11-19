@@ -10,6 +10,58 @@
 <body>
   <div id="app">
     <div id="stage"></div>
+
+    <div id="hud" hidden>
+      <div class="hud-top">
+        <div class="count"><span class="count-icon" aria-hidden="true"></span><span id="hud-count">1</span></div>
+        <div class="level">
+          <div id="hud-level">Operação 1</div>
+          <div class="progress"><div id="hud-progress"></div></div>
+        </div>
+        <button class="icon-btn" data-action="pause" aria-label="Pausar">II</button>
+      </div>
+      <div id="hud-weapon">Fuzil</div>
+      <div id="hud-boss" hidden>
+        <div class="boss-name">CHEFÃO</div>
+        <div class="boss-bar"><div id="hud-boss-fill"></div></div>
+      </div>
+      <div id="hud-toast"></div>
+    </div>
+
+    <section id="screen-menu" class="screen">
+      <h1>ESQUADRÃO <span>Z</span></h1>
+      <p id="menu-level" class="sub">Operação 1</p>
+      <button class="big" data-action="play">JOGAR</button>
+      <p class="tip">Arraste para mover. Destrua barris para resgatar soldados. Fuja dos portões vermelhos.</p>
+      <button class="ghost" data-action="install" id="btn-install" hidden>INSTALAR</button>
+      <p class="tip small" id="ios-hint" hidden>Para instalar: toque em Compartilhar e depois em <b>Adicionar à Tela de Início</b>.</p>
+    </section>
+
+    <section id="screen-pause" class="screen" hidden>
+      <h2>PAUSADO</h2>
+      <button class="big" data-action="resume">CONTINUAR</button>
+      <button class="ghost" data-action="restart">REINICIAR</button>
+      <div class="toggles">
+        <button class="toggle" data-action="toggle-sound" id="btn-sound">SOM: LIGADO</button>
+        <button class="toggle" data-action="toggle-vibe" id="btn-vibe">VIBRAÇÃO: LIGADA</button>
+      </div>
+      <button class="ghost" data-action="menu">MENU</button>
+    </section>
+
+    <section id="screen-won" class="screen" hidden>
+      <h2 id="won-title">OPERAÇÃO 1 CONCLUÍDA!</h2>
+      <p class="sub" id="won-detail"></p>
+      <button class="big" data-action="next">PRÓXIMA OPERAÇÃO</button>
+      <button class="ghost" data-action="menu">MENU</button>
+    </section>
+
+    <section id="screen-lost" class="screen" hidden>
+      <h2>ESQUADRÃO PERDIDO</h2>
+      <p class="sub" id="lost-detail"></p>
+      <button class="big" data-action="restart">TENTAR DE NOVO</button>
+      <button class="ghost" data-action="menu">MENU</button>
+    </section>
+
     <div id="fps" hidden></div>
   </div>
   <script type="module" src="src/main.js"></script>
