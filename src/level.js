@@ -6,7 +6,7 @@ import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS, BOSS_KINDS } f
 export const DIFFICULTY = {
   baseLength: 220, lengthPerLevel: 20, maxLengthSteps: 10,
   firstSlotZ: 18, slotGap: [11, 16], firstBarrelHp: 4, warmupSlots: 2,
-  weaponSlots: [0.3, 0.62], weaponHpSeconds: 3,
+  weaponSlots: [0.45, 0.75], weaponHpSeconds: 3,
   weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
   accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, baitChance: 0.15, baitHp: 2.5,
   blueGateChance: 0.3, hordeSeconds: 2.4, maxHorde: 60, maxZombies: 1500,
@@ -116,6 +116,6 @@ export function generateLevel(n) {
   });
 
   level.boss.kind = BOSS_KINDS[Math.floor((n - 1) / 5) % BOSS_KINDS.length];
-  level.boss.hp = Math.max(150 * n, Math.round(expDps() * (D.bossSeconds + n)));
+  level.boss.hp = Math.max(250 * n, Math.round(expDps() * (D.bossSeconds + n)));
   return level;
 }
