@@ -77,8 +77,18 @@ const hooks = {
 const installer = setupInstall(document);
 registerServiceWorker();
 document.addEventListener('pointerdown', () => audio.unlock(), { capture: true });
+function closeAnnounce() {
+  if (announce !== 0) return;
+  announce = null;
+  ui.hideAnnounce();
+  input.reset(game.squad.x);
+}
+document.addEventListener('pointerup', closeAnnounce);
+addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') closeAnnounce(); });
 
 let state = 'menu';
+// Seconds left before a tap can close the new-weapon notice; null when no notice is open. The game is frozen meanwhile.
+let announce = null;
 let game = null;
 // ?level=N only picks the operation to play; it never overwrites saved progress.
 let levelNumber = params.has('level') ? Math.min(MAX_LEVEL, Math.max(1, Math.floor(Number(params.get('level'))) || 1)) : save.level;
@@ -93,6 +103,8 @@ function newGame() {
   const extra = Math.floor(Number(params.get('soldiers')) || 0) - 1;
   if (extra > 0) addSoldiers(game, extra);
   input.reset(0);
+  announce = null;
+  ui.hideAnnounce();
   clock.acc = 0;
   lastShots = 0;
   lastHits = 0;
@@ -171,7 +183,7 @@ function afterSteps(events) {
     if (e.type === 'tankDestroyed') ui.toast('TANQUE DESTRUÍDO!', 'bad');
   }
   const fresh = DEMO ? null : newPickupAhead(game, save.seen);
-  if (fresh) { save.seen.push(fresh); saveSave(save); ui.announce(fresh); hooks.onEvents([{ type: 'newPickup' }], game); }
+  if (fresh) { save.seen.push(fresh); saveSave(save); ui.announce(fresh); announce = 0.7; hooks.onEvents([{ type: 'newPickup' }], game); }
   hooks.onEvents(events, game);
   if ((game.phase === 'won' || game.phase === 'lost') && !endTimer) {
     if (game.phase === 'won') {
@@ -209,6 +221,9 @@ function frame(now) {
     }
     if (countdown <= 0) ui.countdown(null);
     updateHud();
+  } else if (state === 'playing' && game && announce !== null) {
+    announce = Math.max(0, announce - frameDt);
+    ui.announceReady(announce === 0);
   } else if (state === 'playing' && game) {
     const steps = advanceClock(clock, frameDt);
     for (let i = 0; i < steps; i++) step(STEP);
@@ -220,7 +235,7 @@ function frame(now) {
       if (endTimer <= 0) setState(game.phase === 'won' ? 'won' : 'lost');
     }
   }
-  view.render(game, events, state === 'paused' ? 0 : frameDt);
+  view.render(game, events, state === 'paused' || announce !== null ? 0 : frameDt);
   if (DEBUG) fpsEl.textContent = `${Math.round(view.fps)} fps · ${game.soldiers.length} soldados`;
   requestAnimationFrame(frame);
 }

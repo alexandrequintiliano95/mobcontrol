@@ -15,7 +15,7 @@ export function createUi(doc) {
   const screens = { menu: $('screen-menu'), pause: $('screen-pause'), won: $('screen-won'), lost: $('screen-lost') };
   const hud = $('hud');
   const toastEl = $('hud-toast');
-  let toastTimer = 0, newTimer = 0;
+  let toastTimer = 0;
   let handler = () => {};
   const last = {};
 
@@ -79,9 +79,10 @@ export function createUi(doc) {
       el.classList.remove('show');
       void el.offsetWidth;
       el.classList.add('show');
-      clearTimeout(newTimer);
-      newTimer = setTimeout(() => { el.hidden = true; }, 3200);
+      el.classList.remove('ready');
     },
+    announceReady(ready) { $('hud-new').classList.toggle('ready', ready); },
+    hideAnnounce() { $('hud-new').hidden = true; },
     countdown(text) {
       const el = $('hud-countdown');
       if (!text) { el.hidden = true; return; }
