@@ -9,7 +9,7 @@ export const DIFFICULTY = {
   weaponSlots: [0.45, 0.75], weaponHpSeconds: 3,
   weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
   accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, baitChance: 0.15, baitHp: 2.5,
-  blueGateChance: 0.3, hordeSeconds: 2.4, maxHorde: 35, maxZombies: 1500,
+  blueGateChance: 0.3, hordeSeconds: 3.0, maxHorde: 45, maxZombies: 1500,
   zombieHpPerLevel: 0.2, bossSeconds: 30,
 };
 
@@ -41,7 +41,7 @@ export function generateLevel(n) {
   let expN = startSoldiers, expWeapon = 'rifle';
   const expDps = () => expN * WEAPONS[expWeapon].damage * WEAPONS[expWeapon].rate * D.accuracy;
   // Barrels never get absurdly tough (big squads make the expected-dps estimate overshoot late in the game).
-  const maxBarrelHp = Math.min(650, 210 + 15 * n);
+  const maxBarrelHp = Math.min(750, 310 + 15 * n);
   const addBarrel = (x, z, hp, reward) => level.barrels.push({ id: nextId++, x, z, hp: Math.min(hp, maxBarrelHp), reward });
 
   let lastWasGate = false;
