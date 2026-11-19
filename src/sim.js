@@ -110,11 +110,16 @@ function moveBoss(game, dt) {
     boss.x += clamp(near.x - boss.x, -1, 1) * 2 * dt;
     boss.z = Math.max(game.squad.z - 6, boss.z + clamp(near.z - boss.z, -1, 1) * 2 * dt);
   }
-  boss.biteTimer += dt;
+  // Punches only kill a soldier within reach of the fist; out of reach, the next punch waits.
   const every = 1 / BOSS.killRate;
+  const reach = BOSS.radius + SOLDIER_RADIUS + BOSS.reach;
+  boss.biteTimer = Math.min(boss.biteTimer + dt, every * 2);
   while (boss.biteTimer >= every && game.soldiers.length) {
+    let idx = -1, d2 = reach * reach;
+    game.soldiers.forEach((s, i) => { const d = (s.x - boss.x) ** 2 + (s.z - boss.z) ** 2; if (d <= d2) { d2 = d; idx = i; } });
+    if (idx < 0) break;
     boss.biteTimer -= every;
-    killNearest(game, boss.x, boss.z, 1, 'boss');
+    killSoldier(game, idx, 'boss');
   }
 }
 

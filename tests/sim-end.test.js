@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGame, addSoldiers, stepGame } from '../src/sim.js';
-import { BOSS, BOSS_GAP } from '../src/config.js';
+import { BOSS, BOSS_GAP, ROAD_HALF } from '../src/config.js';
 import { emptyLevel, run, eventsOf } from './helpers/game.js';
 
 test('reaching the end of the road stops the squad and wakes the boss', () => {
@@ -57,4 +57,16 @@ test('a squad that reaches the boss with a strong weapon can still win (minimum 
       assert.equal(g.phase, 'won', `${kind}: ${weapon} x${count}`);
     }
   }
+});
+test('the boss only kills soldiers its punch can reach', () => {
+  const g = createGame(emptyLevel({ length: 1, boss: { hp: 1e9 } }));
+  addSoldiers(g, 9);
+  const bites = () => eventsOf(g, 'soldierKilled').filter((e) => e.cause === 'boss');
+  for (let i = 0; i < 3600 && bites().length === 0; i++) stepGame(g, 1 / 60, { targetX: 0 });
+  // Every punch landed on a soldier within reach of the boss fist.
+  assert.ok(bites().length > 0);
+  // Run away to the far side: no one is in reach, so nobody dies for a moment.
+  g.boss.x = -ROAD_HALF; g.boss.z = g.squad.z; for (const s of g.soldiers) { s.x = ROAD_HALF; }
+  const before = bites().length; stepGame(g, 1 / 60, { targetX: ROAD_HALF }); stepGame(g, 0.2, { targetX: ROAD_HALF });
+  assert.equal(bites().length, before);
 });
