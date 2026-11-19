@@ -11,6 +11,7 @@ export const BULLET_RANGE = 26;
 export const BARREL_RADIUS = 0.75;
 export const GATE_PER_DAMAGE = 1;
 export const GATE_MAX = 30;
+export const GATE_FULL_SQUAD = 6;
 export const RECRUIT_SPEED = 12;
 export const ZOMBIE_ACTIVATE_DIST = 42;
 export const ZOMBIE_HOMING = 0.5;

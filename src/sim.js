@@ -2,7 +2,7 @@
 import {
   ROAD_HALF, SQUAD_SPEED, STEER_SPEED, SOLDIER_RADIUS, SOLDIER_FOLLOW, MAX_SOLDIERS,
   BULLET_SPEED, BULLET_RANGE, BARREL_RADIUS, RECRUIT_SPEED, WEAPONS, BOSS_GAP,
-  GATE_PER_DAMAGE, GATE_MAX, ZOMBIES, ZOMBIE_ACTIVATE_DIST, ZOMBIE_HOMING, BOSS,
+  GATE_PER_DAMAGE, GATE_MAX, GATE_FULL_SQUAD, ZOMBIES, ZOMBIE_ACTIVATE_DIST, ZOMBIE_HOMING, BOSS,
 } from './config.js';
 import { formationOffsets, formationHalfWidth, formationRadius } from './formation.js';
 import { createRng } from './rng.js';
@@ -241,7 +241,9 @@ function hitTargets(game, b, targets) {
   for (const { key, t } of hits) {
     if (t.kind === 'gate') {
       game.hits++;
-      t.ref.value = Math.min(GATE_MAX, t.ref.value + b.damage * GATE_PER_DAMAGE);
+      // Big squads fire many more shots, so each shot counts less (full point up to GATE_FULL_SQUAD soldiers).
+      const scale = Math.min(1, GATE_FULL_SQUAD / Math.max(1, game.soldiers.length));
+      t.ref.value = Math.min(GATE_MAX, t.ref.value + b.damage * GATE_PER_DAMAGE * scale);
       return true;
     }
     if (!t.ref.alive) continue;

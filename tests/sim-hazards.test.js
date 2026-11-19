@@ -6,7 +6,7 @@ import { emptyLevel, run, eventsOf } from './helpers/game.js';
 
 const zombie = (id, x, z, kind = 'walker', hp = ZOMBIES[kind].hp) => ({ id, kind, x, z, hp });
 test('a red gate on the squad side takes as many soldiers as its value', () => {
-  const g = createGame(emptyLevel({ gates: [{ id: 1, side: 1, z: 10, value: -100 }] }));
+  const g = createGame(emptyLevel({ gates: [{ id: 1, side: 1, z: 10, value: -30 }] }));
   addSoldiers(g, 19); run(g, 2.5, { targetX: 3 });
   const [e] = eventsOf(g, 'gate');
   assert.ok(e.value < 0 && -e.value < 20, `value ${e.value}`); assert.equal(g.soldiers.length, 20 + e.value);
@@ -61,4 +61,14 @@ test('a barrel that is not destroyed in time crashes into its column', () => {
 test('passing beside a barrel is harmless', () => {
   const g = createGame(emptyLevel({ barrels: [{ id: 1, x: 2.8, z: 12, hp: 1e9, reward: { kind: 'soldiers', count: 1 } }] }));
   run(g, 3, { targetX: -3 }); assert.equal(eventsOf(g, 'barrelCrash').length, 0); assert.equal(g.soldiers.length, 1);
+});
+test('each shot moves a gate less when the squad is big', () => {
+  const rise = (n) => {
+    const g = createGame(emptyLevel({ gates: [{ id: 1, side: -1, z: 8, value: -1000 }] }));
+    addSoldiers(g, n - 1); g.soldiers.forEach((s) => { s.cooldown = 99; });
+    g.soldiers[0].cooldown = 0.25; run(g, 0.6, { targetX: -3 });
+    return g.gates[0].value + 1000;
+  };
+  assert.equal(rise(2), 1);
+  assert.ok(rise(60) < 0.2, `rise ${rise(60)}`);
 });
