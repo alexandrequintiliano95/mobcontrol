@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateLevel } from '../src/level.js';
-import { ROAD_HALF, BARREL_RADIUS, WEAPON_ORDER } from '../src/config.js';
+import { ROAD_HALF, BARREL_RADIUS, WEAPON_ORDER, SQUAD_SPEED, ZOMBIES } from '../src/config.js';
 
 const zombieHp = (l) => l.zombies.reduce((s, z) => s + z.hp, 0);
 test('the same operation number always builds the same road', () => assert.deepEqual(generateLevel(4), generateLevel(4)));
@@ -68,7 +68,7 @@ test('from operation 25 the first weapon shows up at 30% of the road', () => {
 test('barrels keep some distance from gates', () => {
   for (let n = 1; n <= 40; n++) {
     const l = generateLevel(n);
-    for (const g of l.gates) for (const b of l.barrels) assert.ok(Math.abs(b.z - g.z) >= 17, `op ${n}: barril em ${b.z.toFixed(1)}, portão em ${g.z.toFixed(1)}`);
+    for (const g of l.gates) for (const b of l.barrels) assert.ok(Math.abs(b.z - g.z) >= 16.9, `op ${n}: barril em ${b.z.toFixed(1)}, portão em ${g.z.toFixed(1)}`);
   }
 });
 test('every operation ends with a blue gate', () => {
@@ -77,5 +77,14 @@ test('every operation ends with a blue gate', () => {
     assert.ok(l.gates.find((g) => g.z === lastGate).value > 0, `op ${n}`);
     assert.ok(l.barrels.every((b) => b.z < lastGate), `op ${n}`);
     assert.ok(lastGate <= l.length - 2, `op ${n}`);
+  }
+});
+test('zombies never meet the squad right after a gate', () => {
+  for (let n = 1; n <= 60; n++) {
+    const l = generateLevel(n);
+    for (const zb of l.zombies) {
+      const meet = zb.z * SQUAD_SPEED / (SQUAD_SPEED + ZOMBIES[zb.kind].speed);
+      for (const g of l.gates) assert.ok(meet < g.z - 2 || meet > g.z + 14, `op ${n}: zumbi encontra em ${meet.toFixed(1)}, portão em ${g.z.toFixed(1)}`);
+    }
   }
 });

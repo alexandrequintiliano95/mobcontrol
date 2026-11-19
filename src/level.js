@@ -1,6 +1,6 @@
 // Procedural level ("Operação N") generator. Deterministic per level number.
 import { createRng } from './rng.js';
-import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS, BOSS_KINDS, TANK, SQUAD_SPEED } from './config.js';
+import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS, BOSS_KINDS, TANK, SQUAD_SPEED, BOSS_GAP } from './config.js';
 
 // Difficulty knobs, grouped for tuning.
 export const DIFFICULTY = {
@@ -9,7 +9,7 @@ export const DIFFICULTY = {
   weaponSlots: [0.45, 0.75], weaponHpSeconds: 3,
   weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
   accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, baitChance: 0.15, baitHp: 2.5,
-  blueGateChance: 0.3, gateBarrelGap: 17, hordeSeconds: 3.0, maxHorde: 45, maxZombies: 1500,
+  blueGateChance: 0.3, gateBarrelGap: 17, gateHordeGap: 15, hordeSeconds: 3.0, maxHorde: 45, maxZombies: 1500,
   zombieHpPerLevel: 0.2, bossSeconds: 30,
 };
 
@@ -61,11 +61,14 @@ export function generateLevel(n) {
 
   let lastWasGate = false;
   // Barrels and gates keep at least gateBarrelGap apart: the later one is pushed forward and the road catches up after.
-  let prevKind = null, prevZ = -Infinity;
+  // last.horde is where the last zombie of the latest horde meets the squad.
+  const last = { any: -Infinity, barrel: -Infinity, gate: -Infinity, horde: -Infinity };
   const spaced = (kind, z) => {
-    const clash = prevKind && prevKind !== 'horde' && prevKind !== kind && (kind === 'gate' || prevKind === 'gate');
-    const at = Math.max(z, prevZ + (clash ? D.gateBarrelGap : D.slotGap[0] * 0.75));
-    prevKind = kind; prevZ = at;
+    let at = Math.max(z, last.any + D.slotGap[0] * 0.75);
+    if (kind === 'gate') at = Math.max(at, last.barrel + D.gateBarrelGap, last.horde + 4);
+    if (kind === 'barrel') at = Math.max(at, last.gate + D.gateBarrelGap);
+    if (kind === 'horde') at = Math.max(at, last.gate + D.gateHordeGap);
+    last.any = last[kind] = at;
     return at;
   };
   slots.forEach((slotZ, i) => {
@@ -142,12 +145,15 @@ export function generateLevel(n) {
       if (group.length === 0) group.push({ kind: 'walker', hp: ZOMBIES.walker.hp * hpScale });
       for (const zb of group) {
         if (level.zombies.length >= D.maxZombies) break;
-        level.zombies.push({
-          id: nextId++, kind: zb.kind, hp: zb.hp,
-          x: clamp(cx + rng.range(-LANE, LANE), -ZOMBIE_X, ZOMBIE_X),
-          // Zombies march from the start, so spawn them further out: they meet the squad around the slot.
-          z: Math.min(length - 5, (z + rng.range(0, 4 + 0.35 * group.length)) * (1 + ZOMBIES[zb.kind].speed / SQUAD_SPEED)),
-        });
+        const x = clamp(cx + rng.range(-LANE, LANE), -ZOMBIE_X, ZOMBIE_X);
+        // Zombies march from the start, so spawn them further out: they meet the squad around the slot.
+        const meet = z + rng.range(0, 4 + 0.35 * group.length);
+        const spawn = meet * (1 + ZOMBIES[zb.kind].speed / SQUAD_SPEED);
+        // Fast zombies of the last hordes would have to start past the boss: leave them out instead of piling them up.
+        if (spawn > length + BOSS_GAP - 3) continue;
+        level.zombies.push({ id: nextId++, kind: zb.kind, hp: zb.hp, x, z: spawn });
+        // Remember where the last zombie of this horde meets the squad (keeps the next gate clear of it).
+        last.horde = Math.max(last.horde, meet);
       }
       expN = Math.max(1, expN - group.length * 0.05);
     }
