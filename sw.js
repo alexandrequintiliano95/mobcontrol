@@ -31,6 +31,7 @@ const ASSETS = [
   './src/rng.js',
   './src/sim.js',
   './src/storage.js',
+  './src/discovery.js',
   './src/ui.js',
   './vendor/three.module.min.js',
 ];

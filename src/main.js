@@ -6,6 +6,7 @@ import { createView } from './render/view.js';
 import { createUi } from './ui.js';
 import { createInput } from './input.js';
 import { loadSave, saveSave, MAX_LEVEL } from './storage.js';
+import { newPickupAhead } from './discovery.js';
 import { advanceClock } from './clock.js';
 import { WEAPONS } from './config.js';
 import { createAudio } from './audio.js';
@@ -47,6 +48,7 @@ const FEEDBACK = {
   bossKilled: ['explode'],
   zombieExploded: ['explode', 'medium'],
   tankJoined: ['weapon', 'heavy'],
+  newPickup: ['weapon', 'medium'],
   tankDestroyed: ['explode', 'heavy'],
   shieldBroken: ['hit'],
   bossSummon: ['bossRoar'],
@@ -168,6 +170,8 @@ function afterSteps(events) {
     if (e.type === 'tankJoined') ui.toast('TANQUE! ZUMBIS MAIS RÁPIDOS!', 'info');
     if (e.type === 'tankDestroyed') ui.toast('TANQUE DESTRUÍDO!', 'bad');
   }
+  const fresh = DEMO ? null : newPickupAhead(game, save.seen);
+  if (fresh) { save.seen.push(fresh); saveSave(save); ui.announce(fresh); hooks.onEvents([{ type: 'newPickup' }], game); }
   hooks.onEvents(events, game);
   if ((game.phase === 'won' || game.phase === 'lost') && !endTimer) {
     if (game.phase === 'won') {

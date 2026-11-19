@@ -1,12 +1,21 @@
 // DOM interface: HUD, menus and toasts. Buttons carry data-action attributes.
 import { WEAPONS } from './config.js';
 
+const NEW_PICKUP = {
+  smg: { name: 'Metralhadora', tip: 'Atira o dobro de rápido' },
+  sniper: { name: 'Sniper', tip: 'Tiro forte que atravessa 4 zumbis' },
+  bazooka: { name: 'Bazuca', tip: 'Explode e acerta vários de uma vez' },
+  ak47: { name: 'AK-47', tip: 'Rajada pesada que atravessa 2 zumbis' },
+  minigun: { name: 'Minigun', tip: 'Chuva de balas sem parar' },
+  tank: { name: 'Tanque', tip: 'Um tanque luta do seu lado, mas os zumbis correm mais' },
+};
+
 export function createUi(doc) {
   const $ = (id) => doc.getElementById(id);
   const screens = { menu: $('screen-menu'), pause: $('screen-pause'), won: $('screen-won'), lost: $('screen-lost') };
   const hud = $('hud');
   const toastEl = $('hud-toast');
-  let toastTimer = 0;
+  let toastTimer = 0, newTimer = 0;
   let handler = () => {};
   const last = {};
 
@@ -59,6 +68,19 @@ export function createUi(doc) {
       toastEl.className = `show ${tone}`;
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => { toastEl.className = tone; }, 900);
+    },
+    announce(id) {
+      const info = NEW_PICKUP[id];
+      if (!info) return;
+      const el = $('hud-new');
+      $('hud-new-name').textContent = info.name.toUpperCase();
+      $('hud-new-tip').textContent = info.tip;
+      el.hidden = false;
+      el.classList.remove('show');
+      void el.offsetWidth;
+      el.classList.add('show');
+      clearTimeout(newTimer);
+      newTimer = setTimeout(() => { el.hidden = true; }, 3200);
     },
     countdown(text) {
       const el = $('hud-countdown');
