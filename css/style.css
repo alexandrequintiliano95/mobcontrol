@@ -107,3 +107,7 @@ button.big { max-width: calc(100% - 16px); font-size: clamp(17px, 5.5vw, 22px); 
 .progress-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 5px; }
 .progress-row .progress { margin: 0; flex: 1; max-width: 80%; }
 #hud-progress-text { min-width: 34px; font-size: 13px; font-weight: 900; color: var(--accent); text-shadow: 0 1px 3px #000a; }
+
+#hud-countdown { position: absolute; left: 0; right: 0; top: 30%; text-align: center; font-size: 110px; font-weight: 900;
+  color: #ffd23f; -webkit-text-stroke: 4px #1b1d2a; text-shadow: 0 6px 0 #0007; animation: count 0.9s ease-out; }
+@keyframes count { 0% { transform: scale(2.2); opacity: 0; } 25% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.85); opacity: 0.9; } }

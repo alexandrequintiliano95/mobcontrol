@@ -60,6 +60,15 @@ export function createUi(doc) {
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => { toastEl.className = tone; }, 900);
     },
+    countdown(text) {
+      const el = $('hud-countdown');
+      if (!text) { el.hidden = true; return; }
+      el.hidden = false;
+      el.textContent = text;
+      el.style.animation = 'none';
+      void el.offsetWidth;
+      el.style.animation = '';
+    },
     setToggles({ sound, vibe }) {
       $('btn-sound').textContent = `SOM: ${sound ? 'LIGADO' : 'DESLIGADO'}`;
       $('btn-vibe').textContent = `VIBRAÇÃO: ${vibe ? 'LIGADA' : 'DESLIGADA'}`;

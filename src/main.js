@@ -83,6 +83,8 @@ let levelNumber = params.has('level') ? Math.min(MAX_LEVEL, Math.max(1, Math.flo
 let endTimer = 0;
 let lastShots = 0, lastHits = 0, peak = 1;
 const clock = { acc: 0 };
+let countdown = 0; // seconds left before the run starts (3, 2, 1, VAI!)
+let shownCount = null;
 
 function newGame() {
   game = createGame(generateLevel(levelNumber));
@@ -114,6 +116,8 @@ function setState(next) {
 
 function play() {
   newGame();
+  countdown = DEMO ? 0 : 3.6;
+  shownCount = null;
   setState('playing');
 }
 
@@ -191,7 +195,17 @@ function frame(now) {
   const frameDt = Math.max(0, Math.min(0.1, (now - last) / 1000));
   last = now;
   let events = [];
-  if (state === 'playing' && game) {
+  if (state === 'playing' && game && countdown > 0) {
+    countdown -= frameDt;
+    const label = countdown > 0.6 ? String(Math.ceil(countdown - 0.6)) : 'VAI!';
+    if (label !== shownCount) {
+      shownCount = label;
+      ui.countdown(label);
+      audio.play(label === 'VAI!' ? 'weapon' : 'click');
+    }
+    if (countdown <= 0) ui.countdown(null);
+    updateHud();
+  } else if (state === 'playing' && game) {
     const steps = advanceClock(clock, frameDt);
     for (let i = 0; i < steps; i++) step(STEP);
     events = game.events.splice(0);
@@ -215,6 +229,8 @@ requestAnimationFrame(frame);
 // Debug hook: advance the game without requestAnimationFrame (hidden tabs do not animate).
 if (DEBUG) {
   window.__advance = (seconds, targetX = null) => {
+    countdown = 0;
+    ui.countdown(null);
     let events = [];
     for (let i = 0; i < Math.round(seconds * 60); i++) {
       if (state !== 'playing') break;
