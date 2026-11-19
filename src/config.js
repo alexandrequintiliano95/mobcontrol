@@ -32,4 +32,4 @@ export const ZOMBIES = {
   brute: { hp: 14, speed: 1.1, radius: 0.6, kills: 4 },
 };
 
-export const BOSS = { radius: 1.6, speed: 1.3, killRate: 6 };
+export const BOSS = { radius: 1.6, speed: 1.3, killRate: 6, minSeconds: 7 };

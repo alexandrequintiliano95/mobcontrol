@@ -164,6 +164,10 @@ function moveSquad(game, dt, input) {
       squad.z = game.level.length;
       game.phase = 'boss';
       game.boss.active = true;
+      // The boss always takes a few seconds, however big the squad got.
+      const w = WEAPONS[squad.weapon];
+      const minHp = game.soldiers.length * w.damage * w.rate * BOSS.minSeconds;
+      if (game.boss.hp < minHp) game.boss.hp = game.boss.maxHp = Math.round(minHp);
       game.events.push({ type: 'bossSpawn' });
     }
   }

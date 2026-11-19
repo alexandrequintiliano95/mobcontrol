@@ -31,3 +31,12 @@ test('losing the last soldier loses the game', () => {
   run(g, 2, { targetX: 3 });
   assert.equal(g.phase, 'lost'); assert.equal(g.soldiers.length, 0); assert.equal(eventsOf(g, 'lost').length, 1);
 });
+
+test('a huge squad still needs a few seconds to take the boss down', () => {
+  const g = createGame(emptyLevel({ length: 1, boss: { hp: 5 } }));
+  addSoldiers(g, 199); g.squad.weapon = 'sniper';
+  run(g, 0.2);
+  assert.equal(g.phase, 'boss');
+  const dps = g.soldiers.length * 6 * 0.9;
+  assert.ok(g.boss.maxHp >= dps * 6, `boss hp ${g.boss.maxHp} vs dps ${dps}`);
+});
