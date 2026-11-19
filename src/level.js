@@ -28,7 +28,9 @@ export function generateLevel(n) {
 
   const slots = [];
   for (let z = D.firstSlotZ; z <= length - 16; z += rng.range(D.slotGap[0], D.slotGap[1])) slots.push(z);
-  const weaponSlotIdx = D.weaponSlots.map((f) => {
+  // From operation 25 the first (strong) weapon comes earlier, at 30% of the road.
+  const weaponSlots = n >= 25 ? [0.3, D.weaponSlots[1]] : D.weaponSlots;
+  const weaponSlotIdx = weaponSlots.map((f) => {
     let best = 2;
     for (let i = 2; i < slots.length; i++) if (Math.abs(slots[i] - f * length) < Math.abs(slots[best] - f * length)) best = i;
     return best;

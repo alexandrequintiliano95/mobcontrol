@@ -53,3 +53,8 @@ test('heavier weapons only show up from operation 20', () => {
   assert.ok(heavy(20).some((t) => t >= 4));
   assert.ok(heavy(35).some((t) => t === WEAPON_ORDER.length - 1));
 });
+test('from operation 25 the first weapon shows up at 30% of the road', () => {
+  const first = (n) => { const l = generateLevel(n); return Math.min(...l.barrels.filter((b) => b.reward.kind === 'weapon').map((b) => b.z)) / l.length; };
+  assert.ok(first(24) > 0.4);
+  assert.ok(Math.abs(first(25) - 0.3) < 0.05 && Math.abs(first(31) - 0.3) < 0.05);
+});
