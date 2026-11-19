@@ -5,11 +5,11 @@ import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS } from './confi
 // Difficulty knobs, grouped for tuning.
 export const DIFFICULTY = {
   baseLength: 220, lengthPerLevel: 20, maxLengthSteps: 10,
-  firstSlotZ: 18, slotGap: [11, 16], firstBarrelHp: 4, warmupSlots: 4,
+  firstSlotZ: 18, slotGap: [11, 16], firstBarrelHp: 4, warmupSlots: 3,
   weaponSlots: [0.3, 0.62], weaponHpSeconds: 3,
-  weights: { barrels: 0.45, gate: 0.2, horde: 0.35 },
+  weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
   accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, baitChance: 0.15, baitHp: 2.5,
-  blueGateChance: 0.3, hordeSeconds: 1.6, maxHorde: 60, maxZombies: 1500,
+  blueGateChance: 0.3, hordeSeconds: 2.4, maxHorde: 60, maxZombies: 1500,
   zombieHpPerLevel: 0.25, bossSeconds: 30,
 };
 
