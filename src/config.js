@@ -13,7 +13,7 @@ export const GATE_PER_DAMAGE = 1;
 export const GATE_MAX = 30;
 export const GATE_FULL_SQUAD = 6;
 export const RECRUIT_SPEED = 12;
-export const ZOMBIE_ACTIVATE_DIST = 42;
+export const ZOMBIE_ACTIVATE_DIST = Infinity; // zombies march from the start
 export const ZOMBIE_HOMING = 0;
 export const BOSS_GAP = 24;
 export const DRAG_GAIN = 2;
@@ -42,4 +42,4 @@ export const ZOMBIES = {
 };
 export const BOSS_KINDS = ['brute', 'summoner', 'charger'];
 
-export const BOSS = { radius: 1.6, speed: 2.4, killRate: 6, minSeconds: 10, summonEvery: 2.5, summonCount: 3, chargerSpeed: 3.6 };
+export const BOSS = { radius: 1.6, speed: 2.4, killRate: 8, minSeconds: 10, summonEvery: 2.5, summonCount: 3, chargerSpeed: 3.6 };

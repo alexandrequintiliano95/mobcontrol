@@ -1,11 +1,11 @@
 // Procedural level ("Operação N") generator. Deterministic per level number.
 import { createRng } from './rng.js';
-import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS, BOSS_KINDS, TANK } from './config.js';
+import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS, BOSS_KINDS, TANK, SQUAD_SPEED } from './config.js';
 
 // Difficulty knobs, grouped for tuning.
 export const DIFFICULTY = {
   baseLength: 220, lengthPerLevel: 20, maxLengthSteps: 10,
-  firstSlotZ: 18, slotGap: [11, 16], firstBarrelHp: 4, warmupSlots: 2,
+  firstSlotZ: 18, slotGap: [11, 16], firstBarrelHp: 4, warmupSlots: 5,
   weaponSlots: [0.45, 0.75], weaponHpSeconds: 3,
   weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
   accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, baitChance: 0.15, baitHp: 2.5,
@@ -117,7 +117,8 @@ export function generateLevel(n) {
         level.zombies.push({
           id: nextId++, kind: zb.kind, hp: zb.hp,
           x: clamp(cx + rng.range(-1.8, 1.8), -ZOMBIE_X, ZOMBIE_X),
-          z: Math.min(length - 10, z + rng.range(0, 4 + 0.35 * group.length)), // spread out so the horde is not a wall
+          // Zombies march from the start, so spawn them further out: they meet the squad around the slot.
+          z: Math.min(length - 5, (z + rng.range(0, 4 + 0.35 * group.length)) * (1 + ZOMBIES[zb.kind].speed / SQUAD_SPEED)),
         });
       }
       expN = Math.max(1, expN - group.length * 0.05);
@@ -126,6 +127,6 @@ export function generateLevel(n) {
   });
 
   level.boss.kind = BOSS_KINDS[Math.floor((n - 1) / 5) % BOSS_KINDS.length];
-  level.boss.hp = Math.max(250 * n, Math.round(expDps() * (D.bossSeconds + n)));
+  level.boss.hp = Math.max(350 * n, Math.round(expDps() * (D.bossSeconds + n)));
   return level;
 }

@@ -28,10 +28,11 @@ test('a gate never goes above GATE_MAX', () => {
   addSoldiers(g, 59); run(g, 4, { targetX: -3 });
   assert.equal(eventsOf(g, 'gate')[0].value, GATE_MAX);
 });
-test('zombies wake up when the squad gets close and walk toward it', () => {
-  const far = ZOMBIE_ACTIVATE_DIST + 10, g = createGame(emptyLevel({ zombies: [zombie(1, 0, far, 'walker', 1e9)] }));
-  run(g, 0.5); assert.equal(g.zombies[0].active, false);
-  run(g, 2); assert.equal(g.zombies[0].active, true); assert.ok(g.zombies[0].z < far);
+test('zombies walk toward the squad from the very start, wherever they are', () => {
+  const g = createGame(emptyLevel({ zombies: [zombie(1, 3, 200, 'walker', 1e9)] }));
+  run(g, 1);
+  assert.equal(g.zombies[0].active, true);
+  assert.ok(g.zombies[0].z < 200);
 });
 test('a zombie that touches the squad kills one soldier and dies', () => {
   const g = createGame(emptyLevel({ zombies: [zombie(1, 0, 15, 'walker', 1e9)] }));
