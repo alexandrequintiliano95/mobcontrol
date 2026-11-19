@@ -18,6 +18,8 @@ export const ZOMBIE_HOMING = 0;
 export const BOSS_GAP = 24;
 export const DRAG_GAIN = 2;
 export const KEY_SPEED = 9;
+// Every KILL_REWARD zombies shot down, one soldier joins the squad.
+export const KILL_REWARD = 20;
 
 export const WEAPONS = {
   rifle: { label: 'Fuzil', damage: 1, rate: 3, pierce: 1, splash: 0 },

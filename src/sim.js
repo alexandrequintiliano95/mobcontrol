@@ -1,7 +1,7 @@
 // Game simulation: pure rules, no DOM and no three.js. See docs/superpowers/plans for the data contracts.
 import {
   ROAD_HALF, SQUAD_SPEED, STEER_SPEED, SOLDIER_RADIUS, SOLDIER_FOLLOW, MAX_SOLDIERS,
-  BULLET_SPEED, BULLET_RANGE, BARREL_RADIUS, RECRUIT_SPEED, WEAPONS, BOSS_GAP,
+  BULLET_SPEED, BULLET_RANGE, KILL_REWARD, BARREL_RADIUS, RECRUIT_SPEED, WEAPONS, BOSS_GAP,
   GATE_PER_DAMAGE, GATE_MAX, GATE_FULL_SQUAD, TANK, ZOMBIES, ZOMBIE_ACTIVATE_DIST, ZOMBIE_HOMING, BOSS,
 } from './config.js';
 import { formationOffsets, formationHalfWidth, formationRadius } from './formation.js';
@@ -36,6 +36,7 @@ export function createGame(level, options = {}) {
     boss: { x: 0, z: level.length + BOSS_GAP, hp: level.boss.hp, maxHp: level.boss.hp, active: false, alive: true, biteTimer: 0, kind: level.boss.kind ?? 'brute', summonTimer: 0 },
     tank: null,
     tankShots: 0,
+    kills: 0,
     events: [],
   };
   const ids = [...level.barrels, ...level.gates, ...level.zombies].map((e) => e.id);
@@ -346,6 +347,9 @@ function damageZombie(game, zb, amount) {
   zb.hp -= amount;
   if (zb.hp > 0) return;
   killZombie(game, zb);
+  // Shot down (not crashed into the squad): count toward the next free soldier.
+  game.kills++;
+  if (game.kills % KILL_REWARD === 0 && addSoldiers(game, 1)) game.events.push({ type: 'killReward', x: game.squad.x, z: game.squad.z });
 }
 
 function killZombie(game, zb) {

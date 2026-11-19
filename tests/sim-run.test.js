@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGame, addSoldiers } from '../src/sim.js';
 import { formationHalfWidth } from '../src/formation.js';
-import { SQUAD_SPEED, STEER_SPEED, ROAD_HALF, SOLDIER_RADIUS, WEAPONS, BULLET_RANGE, MAX_SOLDIERS } from '../src/config.js';
+import { SQUAD_SPEED, STEER_SPEED, ROAD_HALF, SOLDIER_RADIUS, WEAPONS, BULLET_RANGE, MAX_SOLDIERS, KILL_REWARD } from '../src/config.js';
 import { emptyLevel, run, eventsOf } from './helpers/game.js';
 
 const barrel = (id, x, z, hp, reward = { kind: 'soldiers', count: 1 }) => ({ id, x, z, hp, reward });
@@ -53,4 +53,13 @@ test('sniper bullets pierce through several targets', () => {
 test('the squad never grows past MAX_SOLDIERS', () => {
   const g = createGame(emptyLevel({ barrels: [barrel(1, 0, 14, 1, { kind: 'soldiers', count: 5 })] }));
   addSoldiers(g, MAX_SOLDIERS - 2); run(g, 4); assert.equal(g.soldiers.length, MAX_SOLDIERS);
+});
+test('every KILL_REWARD zombies shot down, a new soldier joins the squad', () => {
+  const zombies = Array.from({ length: KILL_REWARD * 2 + 3 }, (_, i) => ({ id: 100 + i, kind: 'walker', x: 0, z: 14 + (i % 5) * 0.4, hp: 0.5 }));
+  const g = createGame(emptyLevel({ zombies })); addSoldiers(g, 29);
+  run(g, 3);
+  const killed = eventsOf(g, 'zombieKilled').length;
+  assert.ok(killed >= KILL_REWARD * 2, `mortos ${killed}`);
+  assert.equal(eventsOf(g, 'killReward').length, Math.floor(killed / KILL_REWARD));
+  assert.equal(g.soldiers.length, 30 + Math.floor(killed / KILL_REWARD) - eventsOf(g, 'soldierKilled').length);
 });

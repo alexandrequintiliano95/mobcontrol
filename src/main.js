@@ -49,6 +49,7 @@ const FEEDBACK = {
   zombieExploded: ['explode', 'medium'],
   tankJoined: ['weapon', 'heavy'],
   newPickup: ['weapon', 'medium'],
+  killReward: ['recruit', 'light'],
   tankDestroyed: ['explode', 'heavy'],
   shieldBroken: ['hit'],
   bossSummon: ['bossRoar'],
@@ -178,6 +179,7 @@ function afterSteps(events) {
   for (const e of events) {
     if (e.type === 'gate') ui.toast(e.value > 0 ? `+${e.value}` : String(e.value), e.value > 0 ? 'good' : 'bad');
     if (e.type === 'weapon') ui.toast(`${WEAPONS[game.squad.weapon].label.toUpperCase()}!`, 'info');
+    if (e.type === 'killReward') ui.toast('+1 SOLDADO', 'good');
     if (e.type === 'bossSpawn') ui.toast('CHEFÃO!', 'bad');
     if (e.type === 'tankJoined') ui.toast('TANQUE! ZUMBIS MAIS RÁPIDOS!', 'info');
     if (e.type === 'tankDestroyed') ui.toast('TANQUE DESTRUÍDO!', 'bad');
