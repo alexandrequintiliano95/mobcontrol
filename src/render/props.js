@@ -1,5 +1,5 @@
 // Barrels (with riders or a weapon on top), gates and the boss.
-import { Group, Mesh, MeshLambertMaterial, MeshBasicMaterial, PlaneGeometry, DoubleSide } from 'three';
+import { Group, Mesh, MeshLambertMaterial, MeshBasicMaterial, PlaneGeometry, BoxGeometry, SphereGeometry, DoubleSide, AdditiveBlending } from 'three';
 import { ROAD_HALF, BARREL_RADIUS } from '../config.js';
 import { barrelGeometry, soldierGeometry, weaponGeometry, gateFrameGeometry, bossGeometry, bossArmGeometry } from './geometry.js';
 import { BOSS } from '../config.js';
@@ -76,7 +76,7 @@ export function createProps(scene, game) {
   const bossMaterial = new MeshLambertMaterial({ vertexColors: true });
   bossMaterial.color.setRGB(look[0], look[1], look[2]);
   const boss = new Group();
-  const bossBody = new Mesh(bossGeometry({ arms: false }), bossMaterial);
+  const bossBody = new Mesh(bossGeometry({ arms: false, eyes: false }), bossMaterial);
   const armGeo = bossArmGeometry();
   const arms = [-1, 1].map((side) => {
     const arm = new Mesh(armGeo, bossMaterial);
@@ -85,6 +85,19 @@ export function createProps(scene, game) {
     return arm;
   });
   boss.add(bossBody);
+  // Glowing eyes: unlit so they ignore scene lighting, plus a pulsing additive halo.
+  const eyeGeo = new BoxGeometry(0.07, 0.05, 0.03);
+  const haloGeo = new SphereGeometry(0.07, 10, 8);
+  const eyeMat = new MeshBasicMaterial({ color: 0xff2020 });
+  const haloMat = new MeshBasicMaterial({ color: 0xff3020, transparent: true, opacity: 0.6, blending: AdditiveBlending, depthWrite: false });
+  const halos = [-0.07, 0.07].map((x) => {
+    const eye = new Mesh(eyeGeo, eyeMat);
+    eye.position.set(x, 1.03, -0.24);
+    const halo = new Mesh(haloGeo, haloMat);
+    halo.position.set(x, 1.03, -0.25);
+    boss.add(eye, halo);
+    return halo;
+  });
   boss.scale.setScalar(look[3]);
   boss.rotation.y = Math.PI;
   root.add(boss);
@@ -136,6 +149,9 @@ export function createProps(scene, game) {
     const bo = g.boss;
     boss.visible = bo.alive && visibleZ(g, bo.z);
     if (boss.visible) {
+      const glow = 0.5 + 0.5 * Math.sin(time * 6);
+      haloMat.opacity = 0.35 + 0.45 * glow;
+      for (const h of halos) h.scale.setScalar(0.85 + 0.35 * glow);
       if (bo.engaged) {
         // Punching: arms alternate, one blow per bite, body lunges forward on each hit.
         const t = (bo.biteTimer * BOSS.killRate) % 1;
@@ -169,6 +185,7 @@ export function createProps(scene, game) {
       armGeo.dispose();
       tankGeo.dispose();
       bossMaterial.dispose();
+      eyeGeo.dispose(); haloGeo.dispose(); eyeMat.dispose(); haloMat.dispose();
       material.dispose();
     },
   };
