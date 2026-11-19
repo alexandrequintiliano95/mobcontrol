@@ -9,6 +9,7 @@ import { loadSave, saveSave } from './storage.js';
 import { advanceClock } from './clock.js';
 import { createAudio } from './audio.js';
 import { createHaptics, createWakeLock } from './device.js';
+import { registerServiceWorker, setupInstall } from './pwa.js';
 
 const params = new URLSearchParams(location.search);
 const DEBUG = params.has('debug');
@@ -63,7 +64,10 @@ const hooks = {
   onStart() { wakeLock.acquire(); },
   onPause() { wakeLock.release(); },
   onSettings: applySettings,
+  onAction(action) { if (action === 'install') installer.install(); },
 };
+const installer = setupInstall(document);
+registerServiceWorker();
 document.addEventListener('pointerdown', () => audio.unlock(), { capture: true });
 
 let state = 'menu';
