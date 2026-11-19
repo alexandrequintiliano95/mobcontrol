@@ -70,3 +70,14 @@ test('the boss only kills soldiers its punch can reach', () => {
   const before = bites().length; stepGame(g, 1 / 60, { targetX: ROAD_HALF }); stepGame(g, 0.2, { targetX: ROAD_HALF });
   assert.equal(bites().length, before);
 });
+test('during the boss fight the squad can step back and forth, within limits', () => {
+  const g = createGame(emptyLevel({ length: 5, boss: { hp: 1e9 } }));
+  run(g, 0.5, { targetX: 0, targetDz: -50 });
+  assert.ok(g.squad.z <= 5, 'antes do chefão não recua');
+  run(g, 1, { targetX: 0 });
+  assert.equal(g.phase, 'boss');
+  run(g, 3, { targetX: 0, targetDz: -50 });
+  assert.equal(g.squad.z, 5 - BOSS.retreat);
+  run(g, 3, { targetX: 0, targetDz: 50 });
+  assert.equal(g.squad.z, 5 + BOSS.advance);
+});

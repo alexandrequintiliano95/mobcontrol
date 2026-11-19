@@ -42,3 +42,15 @@ test('arrow keys move the target at KEY_SPEED', () => {
   keys.dispatchEvent(ev('keyup', { key: 'ArrowLeft' }));
   assert.ok(Math.abs(input.update(0.25) + 0.25 * KEY_SPEED) < 1e-9);
 });
+test('dragging up and down gives a forward/back target (used in the boss fight)', () => {
+  const { el, keys, input } = setup();
+  el.dispatchEvent(ev('pointerdown', { pointerId: 1, clientX: 200, clientY: 500 }));
+  el.dispatchEvent(ev('pointermove', { pointerId: 1, clientX: 200, clientY: 400 }));
+  assert.ok(input.forward() > 0, 'arrastar pra cima vai pra frente');
+  el.dispatchEvent(ev('pointermove', { pointerId: 1, clientX: 200, clientY: 700 }));
+  assert.ok(input.forward() < 0, 'arrastar pra baixo recua');
+  input.resetForward(); assert.equal(input.forward(), 0);
+  el.dispatchEvent(ev('pointerup', { pointerId: 1 }));
+  keys.dispatchEvent(ev('keydown', { key: 'ArrowDown' })); input.update(0.5);
+  assert.ok(input.forward() < 0);
+});

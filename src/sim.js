@@ -219,6 +219,11 @@ function moveSquad(game, dt, input) {
       if (game.boss.hp < minHp) game.boss.hp = game.boss.maxHp = Math.round(minHp);
       game.events.push({ type: 'bossSpawn' });
     }
+  } else if (game.phase === 'boss') {
+    // Boss fight: the player can step back and forth around the end of the road.
+    const end = game.level.length;
+    const want = end + clamp(input?.targetDz ?? 0, -BOSS.retreat, BOSS.advance);
+    squad.z = clamp(squad.z + clamp(want - squad.z, -BOSS.stepSpeed * dt, BOSS.stepSpeed * dt), end - BOSS.retreat, end + BOSS.advance);
   }
   const limit = Math.max(0, ROAD_HALF - formationHalfWidth(game.soldiers.length) - SOLDIER_RADIUS);
   const step = clamp((input?.targetX ?? 0) - squad.x, -STEER_SPEED * dt, STEER_SPEED * dt);

@@ -169,7 +169,7 @@ addEventListener('keydown', (e) => {
 
 function step(dt) {
   const target = DEMO ? autopilot(game).targetX : input.update(dt);
-  stepGame(game, dt, { targetX: target });
+  stepGame(game, dt, { targetX: target, targetDz: DEMO ? 0 : input.forward() });
 }
 
 function afterSteps(events) {
@@ -180,7 +180,7 @@ function afterSteps(events) {
     if (e.type === 'gate') ui.toast(e.value > 0 ? `+${e.value}` : String(e.value), e.value > 0 ? 'good' : 'bad');
     if (e.type === 'weapon') ui.toast(`${WEAPONS[game.squad.weapon].label.toUpperCase()}!`, 'info');
     if (e.type === 'killReward') ui.toast('+1 SOLDADO', 'good');
-    if (e.type === 'bossSpawn') ui.toast('CHEFÃO!', 'bad');
+    if (e.type === 'bossSpawn') { input.resetForward(); ui.toast('CHEFÃO! ARRASTE ↑↓ PARA DESVIAR', 'bad'); }
     if (e.type === 'tankJoined') ui.toast('TANQUE! ZUMBIS MAIS RÁPIDOS!', 'info');
     if (e.type === 'tankDestroyed') ui.toast('TANQUE DESTRUÍDO!', 'bad');
   }
@@ -202,7 +202,7 @@ function updateHud() {
   ui.hud({
     count: game.soldiers.length,
     level: game.level.number,
-    progress: game.squad.z / game.level.length,
+    progress: game.phase === 'run' ? game.squad.z / game.level.length : 1,
     weapon: game.squad.weapon,
     bossHp: game.phase === 'boss' || (game.phase === 'won' && game.boss.maxHp) ? Math.max(0, game.boss.hp / game.boss.maxHp) : null,
   });
