@@ -43,7 +43,8 @@ export function createProps(scene, game) {
       badge.sprite.position.set(0, 2.75, 0);
       group.add(badge.sprite);
     } else {
-      const geo = (shared.weapons[b.reward.weapon] ??= weaponGeometry(b.reward.weapon));
+      const wid = b.reward.kind === 'tank' ? 'tank' : b.reward.weapon;
+      const geo = (shared.weapons[wid] ??= weaponGeometry(wid));
       const weapon = new Mesh(geo, material);
       weapon.scale.setScalar(1.5);
       weapon.position.set(0, 1.75, 0);
@@ -88,6 +89,14 @@ export function createProps(scene, game) {
   boss.rotation.y = Math.PI;
   root.add(boss);
 
+  // Allied tank (one per operation).
+  const tankGeo = weaponGeometry('tank');
+  const tank = new Mesh(tankGeo, material);
+  tank.scale.setScalar(2.4);
+  tank.visible = false;
+  root.add(tank);
+  let tankFlash = 0, lastTankHp = null;
+
   function sync(g, time, camera, dt = 1 / 60) {
     for (const b of barrels) {
       const o = b.ref;
@@ -113,6 +122,16 @@ export function createProps(scene, game) {
       gt.panelMat.opacity = 0.45 * gt.fade + gt.pulse * 2;
       gt.text.set(v > 0 ? `+${v}` : String(v), '#ffffff');
       gt.group.scale.setScalar(1 + gt.pulse * 0.6);
+    }
+    const tk = g.tank;
+    tank.visible = !!tk?.alive;
+    if (tank.visible) {
+      if (lastTankHp !== null && tk.hp < lastTankHp) tankFlash = 0.15;
+      lastTankHp = tk.hp;
+      tankFlash = Math.max(0, tankFlash - dt);
+      const recoil = Math.max(0, tk.cooldown - (1 / 1.2 - 0.15)) * 2;
+      tank.position.set(tk.x, 0.45 + Math.abs(Math.sin(time * 10)) * 0.04, -tk.z + recoil);
+      tank.rotation.z = tankFlash ? Math.sin(time * 80) * 0.05 : 0;
     }
     const bo = g.boss;
     boss.visible = bo.alive && visibleZ(g, bo.z);
@@ -148,6 +167,7 @@ export function createProps(scene, game) {
       for (const w of Object.values(shared.weapons)) w.dispose();
       bossBody.geometry.dispose();
       armGeo.dispose();
+      tankGeo.dispose();
       bossMaterial.dispose();
       material.dispose();
     },

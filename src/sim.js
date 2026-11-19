@@ -2,7 +2,7 @@
 import {
   ROAD_HALF, SQUAD_SPEED, STEER_SPEED, SOLDIER_RADIUS, SOLDIER_FOLLOW, MAX_SOLDIERS,
   BULLET_SPEED, BULLET_RANGE, BARREL_RADIUS, RECRUIT_SPEED, WEAPONS, BOSS_GAP,
-  GATE_PER_DAMAGE, GATE_MAX, GATE_FULL_SQUAD, ZOMBIES, ZOMBIE_ACTIVATE_DIST, ZOMBIE_HOMING, BOSS,
+  GATE_PER_DAMAGE, GATE_MAX, GATE_FULL_SQUAD, TANK, ZOMBIES, ZOMBIE_ACTIVATE_DIST, ZOMBIE_HOMING, BOSS,
 } from './config.js';
 import { formationOffsets, formationHalfWidth, formationRadius } from './formation.js';
 import { createRng } from './rng.js';
@@ -34,6 +34,8 @@ export function createGame(level, options = {}) {
     gates: level.gates.map((g) => ({ id: g.id, side: g.side, z: g.z, value: g.value, passed: false })),
     zombies: level.zombies.map((z) => makeZombie(z.id, z.kind, z.x, z.z, z.hp, false)),
     boss: { x: 0, z: level.length + BOSS_GAP, hp: level.boss.hp, maxHp: level.boss.hp, active: false, alive: true, biteTimer: 0, kind: level.boss.kind ?? 'brute', summonTimer: 0 },
+    tank: null,
+    tankShots: 0,
     events: [],
   };
   const ids = [...level.barrels, ...level.gates, ...level.zombies].map((e) => e.id);
@@ -63,6 +65,7 @@ export function stepGame(game, dt, input) {
   moveSquad(game, dt, input);
   moveSoldiers(game, dt);
   fire(game, dt);
+  moveTank(game, dt);
   moveBullets(game, dt);
   moveRecruits(game, dt);
   passGates(game);
@@ -165,9 +168,15 @@ function moveZombies(game, dt) {
       else continue;
     }
     const spec = ZOMBIES[zb.kind];
-    zb.z -= spec.speed * dt;
+    const tankUp = game.tank?.alive;
+    zb.z -= spec.speed * (tankUp ? TANK.zombieSpeedup : 1) * dt;
     zb.x += clamp(squad.x - zb.x, -1, 1) * ZOMBIE_HOMING * spec.speed * dt;
     if (zb.z < squad.z - 8) { zb.alive = false; continue; }
+    if (tankUp && Math.hypot(game.tank.x - zb.x, game.tank.z - zb.z) < spec.radius + TANK.radius) {
+      damageTank(game, spec.blast ? 5 : Math.max(1, spec.kills));
+      killZombie(game, zb);
+      continue;
+    }
     const reach = spec.radius + SOLDIER_RADIUS;
     if (game.soldiers.some((s) => Math.abs(s.z - zb.z) < reach && Math.hypot(s.x - zb.x, s.z - zb.z) < reach)) {
       killNearest(game, zb.x, zb.z, spec.kills, 'zombie');
@@ -208,6 +217,30 @@ function moveSquad(game, dt, input) {
   const limit = Math.max(0, ROAD_HALF - formationHalfWidth(game.soldiers.length) - SOLDIER_RADIUS);
   const step = clamp((input?.targetX ?? 0) - squad.x, -STEER_SPEED * dt, STEER_SPEED * dt);
   squad.x = clamp(squad.x + step, -limit, limit);
+}
+
+function moveTank(game, dt) {
+  const t = game.tank;
+  if (!t || !t.alive) return;
+  // Rides just in front of the squad.
+  const k = Math.min(1, 6 * dt);
+  t.x += (game.squad.x - t.x) * k;
+  t.z += (game.squad.z + formationRadius(game.soldiers.length) + 1.6 - t.z) * k;
+  t.cooldown -= dt;
+  if (t.cooldown <= 0) {
+    t.cooldown += 1 / TANK.rate;
+    game.tankShots++;
+    game.bullets.push({ x: t.x, z: t.z + 1, prevZ: t.z + 1, damage: TANK.damage, pierce: 1, splash: TANK.splash, travelled: 0, hitIds: [] });
+  }
+}
+
+function damageTank(game, amount) {
+  const t = game.tank;
+  if (!t || !t.alive) return;
+  t.hp -= amount;
+  if (t.hp > 0) return;
+  t.alive = false;
+  game.events.push({ type: 'tankDestroyed', x: t.x, z: t.z });
 }
 
 function moveSoldiers(game, dt) {
@@ -356,6 +389,11 @@ function damageBarrel(game, barrel, damage) {
   if (barrel.reward.kind === 'soldiers') {
     for (let i = 0; i < barrel.reward.count; i++) {
       game.recruits.push({ id: game.nextId++, x: barrel.x + game.rng.range(-0.4, 0.4), z: barrel.z + game.rng.range(-0.3, 0.3) });
+    }
+  } else if (barrel.reward.kind === 'tank') {
+    if (!game.tank) {
+      game.tank = { x: game.squad.x, z: game.squad.z + 3, hp: TANK.hp, maxHp: TANK.hp, cooldown: 0.3, alive: true };
+      game.events.push({ type: 'tankJoined', x: barrel.x, z: barrel.z });
     }
   } else {
     game.squad.weapon = barrel.reward.weapon;

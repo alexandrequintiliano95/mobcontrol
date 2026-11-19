@@ -1,6 +1,6 @@
 // Procedural level ("Operação N") generator. Deterministic per level number.
 import { createRng } from './rng.js';
-import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS, BOSS_KINDS } from './config.js';
+import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS, BOSS_KINDS, TANK } from './config.js';
 
 // Difficulty knobs, grouped for tuning.
 export const DIFFICULTY = {
@@ -58,9 +58,11 @@ export function generateLevel(n) {
       // Heavy weapons (AK-47, minigun, tank cannon) unlock from operation 20, one more tier every 5 operations.
       const topTier = n >= 20 ? Math.min(WEAPON_ORDER.length - 1, 4 + Math.floor((n - 20) / 5)) : 3;
       // The first pickup is one tier below the best one of the operation.
-      const weapon = WEAPON_ORDER[Math.min(topTier - 1 + k, 1 + k + Math.floor((n - 1) / 3))];
-      addBarrel(rng.pick(LANES), z, Math.max(4, Math.round(expDps() * D.weaponHpSeconds)), { kind: 'weapon', weapon });
-      expWeapon = weapon;
+      const weapon = WEAPON_ORDER[Math.min(topTier - 1 + k + (n >= TANK.fromLevel ? 1 : 0), 1 + k + Math.floor((n - 1) / 3))];
+      // From operation 30 the last pickup is the tank instead of a weapon.
+      const reward = n >= TANK.fromLevel && k === weaponSlots.length - 1 ? { kind: 'tank' } : { kind: 'weapon', weapon };
+      addBarrel(rng.pick(LANES), z, Math.max(4, Math.round(expDps() * D.weaponHpSeconds)), reward);
+      if (reward.kind === 'weapon') expWeapon = weapon;
       lastWasGate = false;
       return;
     }

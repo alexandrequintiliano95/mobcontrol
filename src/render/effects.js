@@ -88,6 +88,16 @@ export function createEffects(scene) {
         blast(e.x, e.z, 1.6);
         fx.shake = Math.max(fx.shake, 0.35);
         break;
+      case 'tankJoined':
+        burst(e.x, e.z, 30, [0x556b2f, 0xffd34d, 0xffffff], 1.2);
+        if (rings.length >= CAP.rings) rings.shift();
+        rings.push({ x: e.x, z: -e.z, life: 0.5 });
+        break;
+      case 'tankDestroyed':
+        burst(e.x, e.z, 80, FIRE, 1.8, 1);
+        blast(e.x, e.z, 3);
+        fx.shake = Math.max(fx.shake, 0.8);
+        break;
       case 'shieldBroken':
         burst(e.x, e.z, 14, [0x9fb4c7, 0x6d7178, 0xffffff], 0.8);
         break;

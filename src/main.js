@@ -46,6 +46,8 @@ const FEEDBACK = {
   bossSpawn: ['bossRoar', 'heavy'],
   bossKilled: ['explode'],
   zombieExploded: ['explode', 'medium'],
+  tankJoined: ['weapon', 'heavy'],
+  tankDestroyed: ['explode', 'heavy'],
   shieldBroken: ['hit'],
   bossSummon: ['bossRoar'],
   won: ['win', 'win'],
@@ -159,6 +161,8 @@ function afterSteps(events) {
     if (e.type === 'gate') ui.toast(e.value > 0 ? `+${e.value}` : String(e.value), e.value > 0 ? 'good' : 'bad');
     if (e.type === 'weapon') ui.toast(`${WEAPONS[game.squad.weapon].label.toUpperCase()}!`, 'info');
     if (e.type === 'bossSpawn') ui.toast('CHEFÃO!', 'bad');
+    if (e.type === 'tankJoined') ui.toast('TANQUE! ZUMBIS MAIS RÁPIDOS!', 'info');
+    if (e.type === 'tankDestroyed') ui.toast('TANQUE DESTRUÍDO!', 'bad');
   }
   hooks.onEvents(events, game);
   if ((game.phase === 'won' || game.phase === 'lost') && !endTimer) {
