@@ -48,3 +48,13 @@ test('the boss stops at the squad and keeps punching instead of walking past', (
   assert.ok(g.soldiers.length === 0 || g.boss.z > g.squad.z - 3, `boss z ${g.boss.z} squad z ${g.squad.z}`);
   assert.equal(g.phase, 'lost');
 });
+test('a squad that reaches the boss with a strong weapon can still win (minimum boss hp stays beatable)', () => {
+  for (const kind of ['brute', 'summoner', 'charger']) {
+    for (const [weapon, count] of [['minigun', 100], ['minigun', 160], ['ak47', 120], ['bazooka', 120], ['rifle', 60]]) {
+      const g = createGame(emptyLevel({ number: 43, length: 10, boss: { hp: 100, kind } }));
+      addSoldiers(g, count - 1); g.squad.weapon = weapon;
+      run(g, 60);
+      assert.equal(g.phase, 'won', `${kind}: ${weapon} x${count}`);
+    }
+  }
+});

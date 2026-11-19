@@ -71,9 +71,10 @@ test('barrels keep some distance from gates', () => {
     for (const g of l.gates) for (const b of l.barrels) assert.ok(Math.abs(b.z - g.z) >= 17, `op ${n}: barril em ${b.z.toFixed(1)}, portão em ${g.z.toFixed(1)}`);
   }
 });
-test('every operation ends with a gate', () => {
+test('every operation ends with a blue gate', () => {
   for (let n = 1; n <= 60; n++) {
     const l = generateLevel(n), lastGate = Math.max(...l.gates.map((g) => g.z));
+    assert.ok(l.gates.find((g) => g.z === lastGate).value > 0, `op ${n}`);
     assert.ok(l.barrels.every((b) => b.z < lastGate), `op ${n}`);
     assert.ok(lastGate <= l.length - 2, `op ${n}`);
   }

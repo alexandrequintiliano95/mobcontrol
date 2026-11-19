@@ -42,4 +42,4 @@ export const ZOMBIES = {
 };
 export const BOSS_KINDS = ['brute', 'summoner', 'charger'];
 
-export const BOSS = { radius: 1.6, speed: 2.4, killRate: 8, minSeconds: 10, summonEvery: 2.5, summonCount: 3, chargerSpeed: 3.6 };
+export const BOSS = { radius: 1.6, speed: 2.4, killRate: 8, minSeconds: 6, summonEvery: 2.5, summonCount: 3, chargerSpeed: 3.6 };

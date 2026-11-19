@@ -47,10 +47,10 @@ export function generateLevel(n) {
   const maxBarrelHp = Math.min(700, 310 + 15 * n);
   const addBarrel = (x, z, hp, reward) => level.barrels.push({ id: nextId++, x, z, hp: Math.min(hp, maxBarrelHp), reward });
 
-  const addGate = (z) => {
+  const addGate = (z, blue = rng.chance(D.blueGateChance)) => {
     const side = rng.pick([-1, 1]);
     let value;
-    if (rng.chance(D.blueGateChance)) {
+    if (blue) {
       value = rng.int(3, 6) + Math.floor(n / 2);
       expN += value * 0.5;
     } else {
@@ -154,10 +154,10 @@ export function generateLevel(n) {
     expN = clamp(expN, 1, MAX_SOLDIERS);
   });
 
-  // Every operation ends with a gate right before the boss.
-  addGate(spaced('gate', length - 16));
+  // Every operation ends with a blue (bonus) gate right before the boss.
+  addGate(spaced('gate', length - 16), true);
 
   level.boss.kind = BOSS_KINDS[Math.floor((n - 1) / 5) % BOSS_KINDS.length];
-  level.boss.hp = Math.max(350 * n, Math.round(expDps() * (D.bossSeconds + n)));
+  level.boss.hp = Math.max(300 * n, Math.round(expDps() * (D.bossSeconds + n)));
   return level;
 }
