@@ -36,6 +36,8 @@ export function generateLevel(n) {
     return best;
   });
 
+  // Low operations get a longer barrel warm-up; from 20 on the opening is short (as before).
+  const warmup = n >= 20 ? 2 : D.warmupSlots;
   let expN = startSoldiers, expWeapon = 'rifle';
   const expDps = () => expN * WEAPONS[expWeapon].damage * WEAPONS[expWeapon].rate * D.accuracy;
   // Barrels never get absurdly tough (big squads make the expected-dps estimate overshoot late in the game).
@@ -70,8 +72,8 @@ export function generateLevel(n) {
     }
     let roll = rng.next() * (lastWasGate ? D.weights.barrels + D.weights.horde : 1);
     let type = roll < D.weights.barrels ? 'barrels' : roll < D.weights.barrels + D.weights.horde ? 'horde' : 'gate';
-    if (i < D.warmupSlots) type = 'barrels';
-    if (i === D.warmupSlots) type = 'horde'; // an early horde right after the first barrels
+    if (i < warmup) type = 'barrels';
+    if (i === warmup) type = 'horde'; // an early horde right after the first barrels
     lastWasGate = type === 'gate';
 
     if (type === 'barrels') {
@@ -94,15 +96,15 @@ export function generateLevel(n) {
       }
       level.gates.push({ id: nextId++, side, z, value });
     } else {
-      let budget = expDps() * D.hordeSeconds * (i === D.warmupSlots ? 0.6 : 0.8 + 0.1 * Math.min(n, 12));
-      const early = i <= D.warmupSlots + 3; // opening hordes keep base hp
+      let budget = expDps() * D.hordeSeconds * (i === warmup ? 0.6 : 0.8 + 0.1 * Math.min(n, 12));
+      const early = i <= warmup + 3; // opening hordes keep base hp
       // Zombie HP grows fast until operation 16, then slowly (late levels get harder through numbers, not bullet sponges).
       const hpScale = early ? 1 : 1 + D.zombieHpPerLevel * Math.min(n - 1, 15) + 0.05 * Math.max(0, n - 16);
       const cx = rng.range(-1.8, 1.8);
       const group = [];
       const add = (kind) => { const hp = ZOMBIES[kind].hp * hpScale; budget -= hp; group.push({ kind, hp }); };
       // At most one special zombie per horde, so hordes stay readable.
-      const late = i > D.warmupSlots + 3;
+      const late = i > warmup + 3;
       const specials = [];
       if (late && n >= 3) specials.push('brute');
       if (late && n >= 5) specials.push('bomber');
