@@ -59,6 +59,6 @@ test('the new zombie kinds show up in later operations', () => {
 
 test('later operations start with a bigger squad', () => {
   assert.equal(createGame(generateLevel(1)).soldiers.length, 1);
-  assert.ok(createGame(generateLevel(20)).soldiers.length >= 5);
+  assert.ok(createGame(generateLevel(20)).soldiers.length >= 3);
   assert.ok(createGame(generateLevel(40)).soldiers.length <= 15);
 });

@@ -10,7 +10,7 @@ export const DIFFICULTY = {
   weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
   accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, baitChance: 0.15, baitHp: 2.5,
   blueGateChance: 0.3, hordeSeconds: 2.4, maxHorde: 60, maxZombies: 1500,
-  zombieHpPerLevel: 0.15, bossSeconds: 30,
+  zombieHpPerLevel: 0.2, bossSeconds: 30,
 };
 
 const LANES = [-1.8, 0, 1.8];
@@ -22,7 +22,7 @@ export function generateLevel(n) {
   const rng = createRng(n * 9973 + 17);
   const length = D.baseLength + D.lengthPerLevel * Math.min(n - 1, D.maxLengthSteps);
   // From operation 9 the squad starts bigger, so the opening is not a death trap.
-  const startSoldiers = Math.min(15, 1 + Math.floor(Math.max(0, n - 8) / 2.4));
+  const startSoldiers = Math.min(8, 1 + Math.floor(Math.max(0, n - 10) / 4));
   const level = { number: n, length, startSoldiers, barrels: [], gates: [], zombies: [], boss: { hp: 0 } };
   let nextId = 1;
 
@@ -55,7 +55,8 @@ export function generateLevel(n) {
     if (k !== -1) {
       // Heavy weapons (AK-47, minigun, tank cannon) unlock from operation 20, one more tier every 5 operations.
       const topTier = n >= 20 ? Math.min(WEAPON_ORDER.length - 1, 4 + Math.floor((n - 20) / 5)) : 3;
-      const weapon = WEAPON_ORDER[Math.min(topTier, 1 + k + Math.floor((n - 1) / 3))];
+      // The first pickup is one tier below the best one of the operation.
+      const weapon = WEAPON_ORDER[Math.min(topTier - 1 + k, 1 + k + Math.floor((n - 1) / 3))];
       addBarrel(rng.pick(LANES), z, Math.max(4, Math.round(expDps() * D.weaponHpSeconds)), { kind: 'weapon', weapon });
       expWeapon = weapon;
       lastWasGate = false;
