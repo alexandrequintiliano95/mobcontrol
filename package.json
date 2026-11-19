@@ -1,0 +1,15 @@
+{
+  "name": "esquadrao-z",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "serve": "node tools/serve.mjs",
+    "vendor": "node tools/vendor-three.mjs",
+    "icons": "node tools/make-icons.mjs"
+  },
+  "devDependencies": {
+    "three": "^0.170.0"
+  }
+}
