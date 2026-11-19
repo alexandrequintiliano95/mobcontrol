@@ -1,0 +1,49 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { generateLevel } from '../src/level.js';
+import { ROAD_HALF, BARREL_RADIUS, WEAPON_ORDER } from '../src/config.js';
+
+const zombieHp = (l) => l.zombies.reduce((s, z) => s + z.hp, 0);
+test('the same operation number always builds the same road', () => assert.deepEqual(generateLevel(4), generateLevel(4)));
+test('the first barrel teaches the rules: 1 soldier on top, 4 hp', () => {
+  const [first] = [...generateLevel(1).barrels].sort((a, b) => a.z - b.z);
+  assert.equal(first.hp, 4); assert.deepEqual(first.reward, { kind: 'soldiers', count: 1 });
+});
+test('operation 1 shows a red gate early and offers a weapon', () => {
+  const l = generateLevel(1);
+  assert.ok(l.gates.some((g) => g.value < 0 && g.z < 40));
+  assert.ok(l.barrels.some((b) => b.reward.kind === 'weapon'));
+});
+test('everything sits on the road, before the finish line', () => {
+  for (const n of [1, 3, 7, 12]) {
+    const l = generateLevel(n);
+    for (const b of l.barrels) { assert.ok(Math.abs(b.x) <= ROAD_HALF - BARREL_RADIUS); assert.ok(b.z >= 10 && b.z <= l.length - 10); }
+    for (const z of l.zombies) assert.ok(Math.abs(z.x) <= ROAD_HALF - 0.3);
+    for (const g of l.gates) { assert.ok(g.side === -1 || g.side === 1); assert.ok(g.z >= 10 && g.z <= l.length - 10); }
+  }
+});
+test('later operations are longer and harder', () => {
+  const [a, b, c] = [1, 5, 10].map(generateLevel);
+  assert.ok(a.length <= b.length && b.length <= c.length);
+  assert.ok(zombieHp(a) < zombieHp(b) && zombieHp(b) < zombieHp(c));
+  assert.ok(a.boss.hp < b.boss.hp && b.boss.hp < c.boss.hp);
+});
+test('weapon pickups never step down a tier along the road', () => {
+  for (const n of [1, 4, 9]) {
+    const tiers = generateLevel(n).barrels.filter((b) => b.reward.kind === 'weapon').sort((a, b) => a.z - b.z).map((b) => WEAPON_ORDER.indexOf(b.reward.weapon));
+    for (let i = 1; i < tiers.length; i++) assert.ok(tiers[i] >= tiers[i - 1]);
+  }
+});
+test('ids are unique', () => {
+  const l = generateLevel(6), ids = [...l.barrels, ...l.gates, ...l.zombies].map((e) => e.id);
+  assert.equal(new Set(ids).size, ids.length);
+});
+test('very high operations stay valid and bounded', () => {
+  for (const n of [60, 999]) {
+    const l = generateLevel(n);
+    assert.ok(l.length <= 420 && Number.isFinite(l.boss.hp) && l.boss.hp > 0);
+    assert.ok(l.barrels.every((b) => Number.isFinite(b.hp) && b.hp > 0));
+    assert.ok(l.gates.every((g) => Number.isFinite(g.value) && g.value >= -60));
+    assert.ok(l.zombies.length <= 1500 && l.zombies.every((z) => Number.isFinite(z.hp) && Number.isFinite(z.x)));
+  }
+});
