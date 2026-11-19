@@ -39,7 +39,7 @@ export function generateLevel(n) {
   let expN = startSoldiers, expWeapon = 'rifle';
   const expDps = () => expN * WEAPONS[expWeapon].damage * WEAPONS[expWeapon].rate * D.accuracy;
   // Barrels never get absurdly tough (big squads make the expected-dps estimate overshoot late in the game).
-  const maxBarrelHp = 60 + 6 * n;
+  const maxBarrelHp = Math.min(500, 60 + 15 * n);
   const addBarrel = (x, z, hp, reward) => level.barrels.push({ id: nextId++, x, z, hp: Math.min(hp, maxBarrelHp), reward });
 
   let lastWasGate = false;
