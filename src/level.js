@@ -5,7 +5,7 @@ import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS } from './confi
 // Difficulty knobs, grouped for tuning.
 export const DIFFICULTY = {
   baseLength: 220, lengthPerLevel: 20, maxLengthSteps: 10,
-  firstSlotZ: 18, slotGap: [11, 16], firstBarrelHp: 4, warmupSlots: 3,
+  firstSlotZ: 18, slotGap: [11, 16], firstBarrelHp: 4, warmupSlots: 2,
   weaponSlots: [0.3, 0.62], weaponHpSeconds: 3,
   weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
   accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, baitChance: 0.15, baitHp: 2.5,
@@ -60,6 +60,7 @@ export function generateLevel(n) {
     let roll = rng.next() * (lastWasGate ? D.weights.barrels + D.weights.horde : 1);
     let type = roll < D.weights.barrels ? 'barrels' : roll < D.weights.barrels + D.weights.horde ? 'horde' : 'gate';
     if (i < D.warmupSlots) type = 'barrels';
+    if (i === D.warmupSlots) type = 'horde'; // an early horde right after the first barrels
     lastWasGate = type === 'gate';
 
     if (type === 'barrels') {
@@ -82,12 +83,13 @@ export function generateLevel(n) {
       }
       level.gates.push({ id: nextId++, side, z, value });
     } else {
-      let budget = expDps() * D.hordeSeconds * (0.8 + 0.1 * n);
-      const hpScale = 1 + D.zombieHpPerLevel * (n - 1);
+      let budget = expDps() * D.hordeSeconds * (i === D.warmupSlots ? 0.9 : 0.8 + 0.1 * n);
+      const early = i <= D.warmupSlots + 3; // opening hordes keep base hp
+      const hpScale = early ? 1 : 1 + D.zombieHpPerLevel * (n - 1);
       const cx = rng.range(-1.8, 1.8);
       const group = [];
       const add = (kind) => { const hp = ZOMBIES[kind].hp * hpScale; budget -= hp; group.push({ kind, hp }); };
-      if (n >= 3 && rng.chance(0.4)) add('brute');
+      if (n >= 3 && i > D.warmupSlots + 3 && rng.chance(0.4)) add('brute');
       while (budget > 0 && group.length < D.maxHorde) add(n >= 2 && rng.chance(0.25) ? 'runner' : 'walker');
       if (group.length === 0) group.push({ kind: 'walker', hp: ZOMBIES.walker.hp * hpScale });
       for (const zb of group) {
@@ -103,6 +105,6 @@ export function generateLevel(n) {
     expN = clamp(expN, 1, MAX_SOLDIERS);
   });
 
-  level.boss.hp = Math.round(expDps() * (D.bossSeconds + n));
+  level.boss.hp = Math.max(150 * n, Math.round(expDps() * (D.bossSeconds + n)));
   return level;
 }
