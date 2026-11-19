@@ -261,7 +261,7 @@ function fire(game, dt) {
       s.cooldown += 1 / w.rate;
       game.shots++;
       const z = s.z + BULLET_SPAWN_AHEAD;
-      game.bullets.push({ x: s.x, z, prevZ: z, damage: w.damage, pierce: w.pierce, splash: w.splash, travelled: 0, hitIds: [] });
+      game.bullets.push({ x: s.x, z, prevZ: z, damage: w.damage, pierce: w.pierce, splash: w.splash, range: w.range ?? BULLET_RANGE, travelled: 0, hitIds: [] });
     }
   }
 }
@@ -285,7 +285,7 @@ function moveBullets(game, dt) {
     b.z += d;
     b.travelled += d;
     const consumed = hitTargets(game, b, targets);
-    if (!consumed && b.travelled <= BULLET_RANGE) alive.push(b);
+    if (!consumed && b.travelled <= (b.range ?? BULLET_RANGE)) alive.push(b);
   }
   game.bullets = alive;
 }

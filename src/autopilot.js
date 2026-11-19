@@ -49,7 +49,7 @@ function choose(game, red) {
 
   // 3. Aim at the nearest barrel we can break.
   const target = game.barrels
-    .filter((b) => b.alive && b.z > squad.z + 2 && b.z <= squad.z + BULLET_RANGE && canKill(b) && !(red && onSide(red, b.x)))
+    .filter((b) => b.alive && b.z > squad.z + 2 && b.z <= squad.z + (WEAPONS[squad.weapon]?.range ?? BULLET_RANGE) && canKill(b) && !(red && onSide(red, b.x)))
     .sort((a, b) => a.z - b.z)[0];
   if (target) return clamp(target.x);
 

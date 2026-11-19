@@ -25,6 +25,15 @@ test('each soldier fires at its weapon rate and bullets expire after BULLET_RANG
   assert.ok(Math.abs(g.shots - 3 * WEAPONS.rifle.rate) <= 1);
   assert.ok(g.bullets.every((b) => b.travelled <= BULLET_RANGE));
 });
+test('strong weapons have a shorter range than the rifle', () => {
+  for (const id of ['sniper', 'bazooka', 'ak47', 'minigun']) {
+    const g = createGame(emptyLevel()); g.squad.weapon = id;
+    let longest = 0;
+    for (let i = 0; i < 180; i++) { run(g, 1 / 60); for (const b of g.bullets) longest = Math.max(longest, b.travelled); }
+    assert.ok(WEAPONS[id].range < BULLET_RANGE);
+    assert.ok(longest > WEAPONS[id].range - 2 && longest <= WEAPONS[id].range, id);
+  }
+});
 test('destroying a barrel frees its soldiers, who run in and join', () => {
   const g = createGame(emptyLevel({ barrels: [barrel(1, 0, 20, 4, { kind: 'soldiers', count: 3 })] }));
   run(g, 4);
