@@ -29,7 +29,8 @@ export function generateLevel(n) {
   let nextId = 1;
 
   const slots = [];
-  for (let z = D.firstSlotZ; z <= length - 16; z += rng.range(D.slotGap[0], D.slotGap[1])) slots.push(z);
+  // The last stretch is kept for the final gate.
+  for (let z = D.firstSlotZ; z <= length - 36; z += rng.range(D.slotGap[0], D.slotGap[1])) slots.push(z);
   // From operation 25 the first (strong) weapon comes earlier, at 30% of the road.
   const weaponSlots = n >= 25 ? [0.3, D.weaponSlots[1]] : D.weaponSlots;
   const weaponSlotIdx = weaponSlots.map((f) => {
@@ -45,6 +46,18 @@ export function generateLevel(n) {
   // Barrels never get absurdly tough (big squads make the expected-dps estimate overshoot late in the game).
   const maxBarrelHp = Math.min(700, 310 + 15 * n);
   const addBarrel = (x, z, hp, reward) => level.barrels.push({ id: nextId++, x, z, hp: Math.min(hp, maxBarrelHp), reward });
+
+  const addGate = (z) => {
+    const side = rng.pick([-1, 1]);
+    let value;
+    if (rng.chance(D.blueGateChance)) {
+      value = rng.int(3, 6) + Math.floor(n / 2);
+      expN += value * 0.5;
+    } else {
+      value = -Math.min(60, rng.int(4, 8) + 2 * n + Math.floor(expN / 4));
+    }
+    level.gates.push({ id: nextId++, side, z, value });
+  };
 
   let lastWasGate = false;
   // Barrels and gates keep at least gateBarrelGap apart: the later one is pushed forward and the road catches up after.
@@ -107,15 +120,7 @@ export function generateLevel(n) {
         expN += (count * (bait ? 0.3 : D.expGain)) / xs.length;
       }
     } else if (type === 'gate') {
-      const side = rng.pick([-1, 1]);
-      let value;
-      if (rng.chance(D.blueGateChance)) {
-        value = rng.int(3, 6) + Math.floor(n / 2);
-        expN += value * 0.5;
-      } else {
-        value = -Math.min(60, rng.int(4, 8) + 2 * n + Math.floor(expN / 4));
-      }
-      level.gates.push({ id: nextId++, side, z, value });
+      addGate(z);
     } else {
       let budget = expDps() * D.hordeSeconds * (i === warmup ? 0.45 : 0.8 + 0.1 * Math.min(n, 12)) * (i <= warmup + 3 ? 0.8 : 1);
       const early = i <= warmup + 3; // opening hordes keep base hp
@@ -148,6 +153,9 @@ export function generateLevel(n) {
     }
     expN = clamp(expN, 1, MAX_SOLDIERS);
   });
+
+  // Every operation ends with a gate right before the boss.
+  addGate(spaced('gate', length - 16));
 
   level.boss.kind = BOSS_KINDS[Math.floor((n - 1) / 5) % BOSS_KINDS.length];
   level.boss.hp = Math.max(350 * n, Math.round(expDps() * (D.bossSeconds + n)));
