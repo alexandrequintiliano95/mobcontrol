@@ -22,7 +22,7 @@ test('the boss bites BOSS.killRate soldiers per second while touching the squad'
 });
 test('killing the boss wins and freezes the game', () => {
   const g = createGame(emptyLevel({ length: 1, boss: { hp: 5 } }));
-  addSoldiers(g, 9); run(g, 10);
+  addSoldiers(g, 59); g.squad.weapon = 'sniper'; run(g, 30);
   assert.equal(g.phase, 'won'); assert.equal(eventsOf(g, 'bossKilled').length, 1); assert.equal(eventsOf(g, 'won').length, 1);
   const t = g.time; run(g, 1); assert.equal(g.time, t);
 });
