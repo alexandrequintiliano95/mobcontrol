@@ -51,7 +51,9 @@ export function generateLevel(n) {
     }
     const k = weaponSlotIdx.indexOf(i);
     if (k !== -1) {
-      const weapon = WEAPON_ORDER[Math.min(3, 1 + k + Math.floor((n - 1) / 3))];
+      // Heavy weapons (AK-47, minigun, tank cannon) unlock from operation 20, one more tier every 5 operations.
+      const topTier = n >= 20 ? Math.min(WEAPON_ORDER.length - 1, 4 + Math.floor((n - 20) / 5)) : 3;
+      const weapon = WEAPON_ORDER[Math.min(topTier, 1 + k + Math.floor((n - 1) / 3))];
       addBarrel(rng.pick(LANES), z, Math.max(4, Math.round(expDps() * D.weaponHpSeconds)), { kind: 'weapon', weapon });
       expWeapon = weapon;
       lastWasGate = false;

@@ -47,3 +47,9 @@ test('very high operations stay valid and bounded', () => {
     assert.ok(l.zombies.length <= 1500 && l.zombies.every((z) => Number.isFinite(z.hp) && Number.isFinite(z.x)));
   }
 });
+test('heavier weapons only show up from operation 20', () => {
+  const heavy = (n) => generateLevel(n).barrels.filter((b) => b.reward.kind === 'weapon').map((b) => WEAPON_ORDER.indexOf(b.reward.weapon));
+  for (const n of [1, 10, 19]) assert.ok(heavy(n).every((t) => t <= 3), `op ${n}`);
+  assert.ok(heavy(20).some((t) => t >= 4));
+  assert.ok(heavy(35).some((t) => t === WEAPON_ORDER.length - 1));
+});

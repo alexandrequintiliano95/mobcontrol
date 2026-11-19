@@ -164,6 +164,18 @@ export function weaponGeometry(id) {
       return mergeColored([part(box(0.08, 0.1, 0.7), wood), part(box(0.04, 0.04, 0.5), metal, 0, 0.02, -0.55), part(tube(0.04, 0.04, 0.25, 8), dark, 0, 0.1, -0.05, Math.PI / 2)]);
     case 'bazooka':
       return mergeColored([part(tube(0.1, 0.1, 0.9, 10), olive, 0, 0, 0, Math.PI / 2), part(tube(0.13, 0.1, 0.12, 10), dark, 0, 0, -0.48, Math.PI / 2), part(box(0.06, 0.16, 0.06), dark, 0, -0.14, 0.05)]);
+    case 'ak47':
+      return mergeColored([part(box(0.08, 0.1, 0.55), dark), part(box(0.08, 0.1, 0.25), wood, 0, -0.02, 0.35), part(box(0.06, 0.2, 0.08), 0xb5651d, 0, -0.14, -0.08, 0.3), part(box(0.05, 0.05, 0.2), metal, 0, 0.02, -0.35)]);
+    case 'minigun':
+      return mergeColored([
+        ...[[-0.05, 0.05], [0.05, 0.05], [-0.05, -0.05], [0.05, -0.05]].map(([x, y]) => part(tube(0.03, 0.03, 0.8, 6), metal, x, y, -0.2, Math.PI / 2)),
+        part(box(0.22, 0.22, 0.3), dark, 0, 0, 0.25), part(box(0.18, 0.06, 0.18), 0xd49b00, 0, -0.15, 0.25),
+      ]);
+    case 'tank':
+      return mergeColored([
+        part(box(0.8, 0.25, 1.0), olive, 0, 0, 0), part(box(0.9, 0.15, 1.05), dark, 0, -0.17, 0),
+        part(box(0.5, 0.2, 0.5), olive, 0, 0.22, 0.05), part(tube(0.05, 0.05, 0.7, 8), dark, 0, 0.24, -0.45, Math.PI / 2),
+      ]);
     default:
       return mergeColored([part(box(0.08, 0.1, 0.6), dark), part(box(0.06, 0.14, 0.06), wood, 0, -0.1, 0.12)]);
   }

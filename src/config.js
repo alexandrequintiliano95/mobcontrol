@@ -24,8 +24,11 @@ export const WEAPONS = {
   smg: { label: 'Metralhadora', damage: 0.75, rate: 6, pierce: 1, splash: 0 },
   sniper: { label: 'Sniper', damage: 6, rate: 0.9, pierce: 4, splash: 0 },
   bazooka: { label: 'Bazuca', damage: 7, rate: 0.9, pierce: 1, splash: 1.6 },
+  ak47: { label: 'AK-47', damage: 1.6, rate: 7, pierce: 2, splash: 0 },
+  minigun: { label: 'Minigun', damage: 1.2, rate: 14, pierce: 1, splash: 0 },
+  tank: { label: 'Canhão de tanque', damage: 30, rate: 1.2, pierce: 1, splash: 2.6 },
 };
-export const WEAPON_ORDER = ['rifle', 'smg', 'sniper', 'bazooka'];
+export const WEAPON_ORDER = ['rifle', 'smg', 'sniper', 'bazooka', 'ak47', 'minigun', 'tank'];
 
 export const ZOMBIES = {
   walker: { hp: 3, speed: 1.6, radius: 0.35, kills: 1 },

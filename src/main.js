@@ -7,6 +7,7 @@ import { createUi } from './ui.js';
 import { createInput } from './input.js';
 import { loadSave, saveSave, MAX_LEVEL } from './storage.js';
 import { advanceClock } from './clock.js';
+import { WEAPONS } from './config.js';
 import { createAudio } from './audio.js';
 import { createHaptics, createWakeLock } from './device.js';
 import { registerServiceWorker, setupInstall } from './pwa.js';
@@ -156,7 +157,7 @@ function afterSteps(events) {
   lastHits = game.hits;
   for (const e of events) {
     if (e.type === 'gate') ui.toast(e.value > 0 ? `+${e.value}` : String(e.value), e.value > 0 ? 'good' : 'bad');
-    if (e.type === 'weapon') ui.toast(`${game.squad.weapon === 'bazooka' ? 'BAZUCA' : game.squad.weapon === 'sniper' ? 'SNIPER' : 'METRALHADORA'}!`, 'info');
+    if (e.type === 'weapon') ui.toast(`${WEAPONS[game.squad.weapon].label.toUpperCase()}!`, 'info');
     if (e.type === 'bossSpawn') ui.toast('CHEFÃO!', 'bad');
   }
   hooks.onEvents(events, game);
