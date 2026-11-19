@@ -9,7 +9,7 @@ export const DIFFICULTY = {
   weaponSlots: [0.45, 0.75], weaponHpSeconds: 3,
   weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
   accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, baitChance: 0.15, baitHp: 2.5,
-  blueGateChance: 0.3, hordeSeconds: 2.4, maxHorde: 60, maxZombies: 1500,
+  blueGateChance: 0.3, hordeSeconds: 2.4, maxHorde: 35, maxZombies: 1500,
   zombieHpPerLevel: 0.2, bossSeconds: 30,
 };
 
@@ -88,16 +88,20 @@ export function generateLevel(n) {
       }
       level.gates.push({ id: nextId++, side, z, value });
     } else {
-      let budget = expDps() * D.hordeSeconds * (i === D.warmupSlots ? 0.6 : 0.8 + 0.1 * n);
+      let budget = expDps() * D.hordeSeconds * (i === D.warmupSlots ? 0.6 : 0.8 + 0.1 * Math.min(n, 12));
       const early = i <= D.warmupSlots + 3; // opening hordes keep base hp
-      const hpScale = early ? 1 : 1 + D.zombieHpPerLevel * (n - 1);
+      // Zombie HP grows fast until operation 16, then slowly (late levels get harder through numbers, not bullet sponges).
+      const hpScale = early ? 1 : 1 + D.zombieHpPerLevel * Math.min(n - 1, 15) + 0.05 * Math.max(0, n - 16);
       const cx = rng.range(-1.8, 1.8);
       const group = [];
       const add = (kind) => { const hp = ZOMBIES[kind].hp * hpScale; budget -= hp; group.push({ kind, hp }); };
-      if (n >= 3 && i > D.warmupSlots + 3 && rng.chance(0.4)) add('brute');
+      // At most one special zombie per horde, so hordes stay readable.
       const late = i > D.warmupSlots + 3;
-      if (late && n >= 5 && rng.chance(0.5)) add('bomber');
-      if (late && n >= 6 && rng.chance(0.4)) add('fatty');
+      const specials = [];
+      if (late && n >= 3) specials.push('brute');
+      if (late && n >= 5) specials.push('bomber');
+      if (late && n >= 6) specials.push('fatty');
+      if (specials.length && rng.chance(0.5)) add(rng.pick(specials));
       while (budget > 0 && group.length < D.maxHorde) {
         add(late && n >= 4 && rng.chance(0.15) ? 'shield' : n >= 2 && rng.chance(0.25) ? 'runner' : 'walker');
       }
@@ -107,7 +111,7 @@ export function generateLevel(n) {
         level.zombies.push({
           id: nextId++, kind: zb.kind, hp: zb.hp,
           x: clamp(cx + rng.range(-1.8, 1.8), -ZOMBIE_X, ZOMBIE_X),
-          z: Math.min(length - 10, z + rng.range(0, 3 + 0.08 * group.length)),
+          z: Math.min(length - 10, z + rng.range(0, 4 + 0.35 * group.length)), // spread out so the horde is not a wall
         });
       }
       expN = Math.max(1, expN - group.length * 0.05);
