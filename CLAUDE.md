@@ -1,6 +1,6 @@
 # Esquadrão Z
 
-Jogo PWA para celular (pt-BR): um esquadrão corre sozinho por uma estrada atirando; o jogador arrasta para os lados. Barris com número dão soldados ou armas, portões somam ou subtraem soldados, hordas de zumbis vêm na direção do esquadrão e um chefão espera no fim de cada "Operação N". O jogo foi inspirado no minijogo de corrida do Last War, mas o nome, a arte e as fases são próprios. **Nunca copiar o nome, a arte ou o visual do Last War.**
+Jogo PWA para celular (pt-BR): um esquadrão corre sozinho por uma estrada atirando; o jogador arrasta para os lados. Barris com número dão soldados ou armas, portões somam ou subtraem soldados, hordas de zumbis vêm na direção do esquadrão e um chefão espera no fim de cada "Operação N". O jogo foi inspirado no minijogo de corrida do Last War, mas o nome, a arte e as fases são próprios.
 
 O dono do projeto fala português e pede ajustes de jogabilidade em linguagem informal. Responda em português.
 
