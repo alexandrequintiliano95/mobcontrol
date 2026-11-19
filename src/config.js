@@ -7,7 +7,7 @@ export const SOLDIER_FOLLOW = 10;
 export const FORMATION_SPACING = 0.62;
 export const MAX_SOLDIERS = 300;
 export const BULLET_SPEED = 34;
-export const BULLET_RANGE = 26;
+export const BULLET_RANGE = 30;
 export const BARREL_RADIUS = 0.75;
 export const GATE_PER_DAMAGE = 1;
 export const GATE_MAX = 30;
@@ -22,10 +22,10 @@ export const KEY_SPEED = 9;
 export const WEAPONS = {
   rifle: { label: 'Fuzil', damage: 1, rate: 3, pierce: 1, splash: 0 },
   smg: { label: 'Metralhadora', damage: 0.75, rate: 6, pierce: 1, splash: 0 },
-  sniper: { label: 'Sniper', damage: 6, rate: 0.9, pierce: 4, splash: 0, range: 23 },
-  bazooka: { label: 'Bazuca', damage: 7, rate: 0.9, pierce: 1, splash: 1.6, range: 21 },
-  ak47: { label: 'AK-47', damage: 1.6, rate: 7, pierce: 2, splash: 0, range: 23 },
-  minigun: { label: 'Minigun', damage: 1.2, rate: 14, pierce: 1, splash: 0, range: 21 },
+  sniper: { label: 'Sniper', damage: 6, rate: 0.9, pierce: 4, splash: 0, range: 27 },
+  bazooka: { label: 'Bazuca', damage: 7, rate: 0.9, pierce: 1, splash: 1.6, range: 25 },
+  ak47: { label: 'AK-47', damage: 1.6, rate: 7, pierce: 2, splash: 0, range: 27 },
+  minigun: { label: 'Minigun', damage: 1.2, rate: 14, pierce: 1, splash: 0, range: 25 },
 };
 export const WEAPON_ORDER = ['rifle', 'smg', 'sniper', 'bazooka', 'ak47', 'minigun'];
 // The tank is an allied unit (one per operation), not a weapon. Zombies run faster while it is around.
