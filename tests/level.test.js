@@ -84,7 +84,7 @@ test('zombies never meet the squad right after a gate', () => {
     const l = generateLevel(n);
     for (const zb of l.zombies) {
       const meet = zb.z * SQUAD_SPEED / (SQUAD_SPEED + ZOMBIES[zb.kind].speed);
-      for (const g of l.gates) assert.ok(meet < g.z - 2 || meet > g.z + 14, `op ${n}: zumbi encontra em ${meet.toFixed(1)}, portão em ${g.z.toFixed(1)}`);
+      for (const g of l.gates) assert.ok(meet < g.z - 8 || meet > g.z + 14, `op ${n}: zumbi encontra em ${meet.toFixed(1)}, portão em ${g.z.toFixed(1)}`);
     }
   }
 });
