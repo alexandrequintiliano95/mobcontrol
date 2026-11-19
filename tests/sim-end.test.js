@@ -40,3 +40,11 @@ test('a huge squad still needs a few seconds to take the boss down', () => {
   const dps = g.soldiers.length * 6 * 0.9;
   assert.ok(g.boss.maxHp >= dps * 6, `boss hp ${g.boss.maxHp} vs dps ${dps}`);
 });
+
+test('the boss stops at the squad and keeps punching instead of walking past', () => {
+  const g = createGame(emptyLevel({ length: 1, boss: { hp: 1e9 } }));
+  addSoldiers(g, 199);
+  run(g, 60);
+  assert.ok(g.soldiers.length === 0 || g.boss.z > g.squad.z - 3, `boss z ${g.boss.z} squad z ${g.squad.z}`);
+  assert.equal(g.phase, 'lost');
+});
