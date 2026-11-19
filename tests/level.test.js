@@ -29,7 +29,7 @@ test('later operations are longer and harder', () => {
   assert.ok(a.boss.hp < b.boss.hp && b.boss.hp < c.boss.hp);
 });
 test('weapon pickups never step down a tier along the road', () => {
-  for (const n of [1, 4, 9]) {
+  for (let n = 1; n <= 40; n++) {
     const tiers = generateLevel(n).barrels.filter((b) => b.reward.kind === 'weapon').sort((a, b) => a.z - b.z).map((b) => WEAPON_ORDER.indexOf(b.reward.weapon));
     for (let i = 1; i < tiers.length; i++) assert.ok(tiers[i] >= tiers[i - 1]);
   }
@@ -50,8 +50,15 @@ test('very high operations stay valid and bounded', () => {
 test('heavier weapons only show up from operation 20', () => {
   const heavy = (n) => generateLevel(n).barrels.filter((b) => b.reward.kind === 'weapon').map((b) => WEAPON_ORDER.indexOf(b.reward.weapon));
   for (const n of [1, 10, 19]) assert.ok(heavy(n).every((t) => t <= 3), `op ${n}`);
-  assert.ok(heavy(20).some((t) => t >= 4));
-  assert.ok(heavy(35).some((t) => t === WEAPON_ORDER.length - 1));
+  for (const n of [20, 24]) assert.ok(heavy(n).every((t) => t <= 4), `op ${n}`);
+  const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+  assert.ok(range(20, 29).some((n) => heavy(n).some((t) => t === 4)));
+  assert.ok(range(25, 40).some((n) => heavy(n).some((t) => t === WEAPON_ORDER.length - 1)));
+});
+test('weapon pickups vary between operations of the same stage', () => {
+  const kinds = (a, b) => new Set(Array.from({ length: b - a + 1 }, (_, i) => generateLevel(a + i).barrels.filter((x) => x.reward.kind === 'weapon').map((x) => x.reward.weapon).join()));
+  assert.ok(kinds(4, 19).size >= 3);
+  assert.ok(kinds(30, 45).size >= 3);
 });
 test('from operation 25 the first weapon shows up at 30% of the road', () => {
   const first = (n) => { const l = generateLevel(n); return Math.min(...l.barrels.filter((b) => b.reward.kind === 'weapon').map((b) => b.z)) / l.length; };

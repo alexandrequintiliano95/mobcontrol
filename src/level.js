@@ -20,6 +20,7 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 export function generateLevel(n) {
   const D = DIFFICULTY;
   const rng = createRng(n * 9973 + 17);
+  const weaponRng = createRng(n * 7919 + 101); // separate stream so weapon picks do not shift the layout
   const length = D.baseLength + D.lengthPerLevel * Math.min(n - 1, D.maxLengthSteps);
   // From operation 9 the squad starts bigger, so the opening is not a death trap.
   const startSoldiers = Math.min(8, 1 + Math.floor(Math.max(0, n - 10) / 4));
@@ -38,7 +39,7 @@ export function generateLevel(n) {
 
   // Low operations get a longer barrel warm-up; from 20 on the opening is short (as before).
   const warmup = n >= 20 ? 2 : D.warmupSlots;
-  let expN = startSoldiers, expWeapon = 'rifle';
+  let expN = startSoldiers, expWeapon = 'rifle', prevTier = 1;
   const expDps = () => expN * WEAPONS[expWeapon].damage * WEAPONS[expWeapon].rate * D.accuracy;
   // Barrels never get absurdly tough (big squads make the expected-dps estimate overshoot late in the game).
   const maxBarrelHp = Math.min(750, 310 + 15 * n);
@@ -61,8 +62,13 @@ export function generateLevel(n) {
     if (k !== -1) {
       // Heavy weapons (AK-47, minigun, tank cannon) unlock from operation 20, one more tier every 5 operations.
       const topTier = n >= 20 ? Math.min(WEAPON_ORDER.length - 1, 4 + Math.floor((n - 20) / 5)) : 3;
-      // The first pickup is one tier below the best one of the operation.
-      const weapon = WEAPON_ORDER[Math.min(topTier - 1 + k + (n >= TANK.fromLevel ? 1 : 0), 1 + k + Math.floor((n - 1) / 3))];
+      // Best tier this slot may offer (the first pickup is one tier below the best one of the operation).
+      const maxTier = Math.min(topTier - 1 + k + (n >= TANK.fromLevel ? 1 : 0), 1 + k + Math.floor((n - 1) / 3));
+      // Somewhat random: up to two tiers below the best, never below the previous pickup.
+      const minTier = Math.min(maxTier, Math.max(1, maxTier - 2, prevTier));
+      const tier = weaponRng.int(minTier, maxTier);
+      prevTier = tier;
+      const weapon = WEAPON_ORDER[tier];
       // From operation 30 the last pickup is the tank instead of a weapon.
       const reward = n >= TANK.fromLevel && k === weaponSlots.length - 1 ? { kind: 'tank' } : { kind: 'weapon', weapon };
       addBarrel(rng.pick(LANES), z, Math.max(4, Math.round(expDps() * D.weaponHpSeconds)), reward);
