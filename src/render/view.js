@@ -4,6 +4,10 @@ import { buildWorld } from './world.js';
 import { createActors } from './actors.js';
 import { createProps } from './props.js';
 import { createEffects } from './effects.js';
+import { ROAD_HALF } from '../config.js';
+
+// The camera pulls back as the road gets wider (tuned for a 3.6 half-width).
+const ZOOM = ROAD_HALF / 3.6;
 
 export function createView(container) {
   const stage = createStage(container);
@@ -34,7 +38,7 @@ export function createView(container) {
         shakeY += (Math.random() - 0.5) * e.shake;
       }
     }
-    camera.position.set(camX + shakeX, 12.5 + shakeY, -game.squad.z + 14);
+    camera.position.set(camX + shakeX, 12.5 * ZOOM + shakeY, -game.squad.z + 14 * ZOOM);
     camera.lookAt(camX, 0, -game.squad.z - 7);
   }
 

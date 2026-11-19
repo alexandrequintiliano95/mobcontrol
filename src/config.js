@@ -1,5 +1,5 @@
 // Tunable game constants. Simulation units: x is lateral, z is forward distance.
-export const ROAD_HALF = 3.6;
+export const ROAD_HALF = 4.4;
 export const SQUAD_SPEED = 7;
 export const STEER_SPEED = 20;
 export const SOLDIER_RADIUS = 0.28;

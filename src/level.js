@@ -13,7 +13,8 @@ export const DIFFICULTY = {
   zombieHpPerLevel: 0.2, bossSeconds: 30,
 };
 
-const LANES = [-1.8, 0, 1.8];
+const LANE = ROAD_HALF / 2;
+const LANES = [-LANE, 0, LANE];
 const ZOMBIE_X = ROAD_HALF - 0.35;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -58,7 +59,7 @@ export function generateLevel(n) {
     let z = slotZ;
     if (i === 0) {
       z = spaced('barrel', slotZ);
-      addBarrel(rng.pick([-1.6, 1.6]), z, D.firstBarrelHp, { kind: 'soldiers', count: 1 });
+      addBarrel(rng.pick([-LANE * 0.9, LANE * 0.9]), z, D.firstBarrelHp, { kind: 'soldiers', count: 1 });
       expN += 0.7;
       return;
     }
@@ -97,7 +98,7 @@ export function generateLevel(n) {
     if (z > length - 6) return; // a slot pushed by the gate spacing may run a little past the usual end
 
     if (type === 'barrels') {
-      const xs = rng.chance(0.6) ? [rng.pick(LANES)] : [-1.8, 1.8];
+      const xs = rng.chance(0.6) ? [rng.pick(LANES)] : [-LANE, LANE];
       for (const x of xs) {
         const bait = rng.chance(D.baitChance);
         const count = Math.min(12, rng.int(D.rewardMin, D.rewardMax) + Math.floor(expN / D.rewardPerSoldiers)) * (bait ? 2 : 1);
@@ -120,7 +121,7 @@ export function generateLevel(n) {
       const early = i <= warmup + 3; // opening hordes keep base hp
       // Zombie HP grows fast until operation 16, then slowly (late levels get harder through numbers, not bullet sponges).
       const hpScale = early ? 1 : 1 + D.zombieHpPerLevel * Math.min(n - 1, 15) + 0.05 * Math.max(0, n - 16);
-      const cx = rng.range(-1.8, 1.8);
+      const cx = rng.range(-LANE, LANE);
       const group = [];
       const add = (kind) => { const hp = ZOMBIES[kind].hp * hpScale; budget -= hp; group.push({ kind, hp }); };
       // At most one special zombie per horde, so hordes stay readable.
@@ -138,7 +139,7 @@ export function generateLevel(n) {
         if (level.zombies.length >= D.maxZombies) break;
         level.zombies.push({
           id: nextId++, kind: zb.kind, hp: zb.hp,
-          x: clamp(cx + rng.range(-1.8, 1.8), -ZOMBIE_X, ZOMBIE_X),
+          x: clamp(cx + rng.range(-LANE, LANE), -ZOMBIE_X, ZOMBIE_X),
           // Zombies march from the start, so spawn them further out: they meet the squad around the slot.
           z: Math.min(length - 5, (z + rng.range(0, 4 + 0.35 * group.length)) * (1 + ZOMBIES[zb.kind].speed / SQUAD_SPEED)),
         });
