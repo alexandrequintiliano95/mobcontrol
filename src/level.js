@@ -96,7 +96,7 @@ export function generateLevel(n) {
       }
       level.gates.push({ id: nextId++, side, z, value });
     } else {
-      let budget = expDps() * D.hordeSeconds * (i === warmup ? 0.6 : 0.8 + 0.1 * Math.min(n, 12));
+      let budget = expDps() * D.hordeSeconds * (i === warmup ? 0.45 : 0.8 + 0.1 * Math.min(n, 12)) * (i <= warmup + 3 ? 0.8 : 1);
       const early = i <= warmup + 3; // opening hordes keep base hp
       // Zombie HP grows fast until operation 16, then slowly (late levels get harder through numbers, not bullet sponges).
       const hpScale = early ? 1 : 1 + D.zombieHpPerLevel * Math.min(n - 1, 15) + 0.05 * Math.max(0, n - 16);
