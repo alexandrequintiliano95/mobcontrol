@@ -94,7 +94,7 @@ export function generateLevel(n) {
     if (i === warmup) type = 'horde'; // an early horde right after the first barrels
     lastWasGate = type === 'gate';
     z = spaced(type === 'barrels' ? 'barrel' : type, slotZ);
-    if (z > length - 16) return;
+    if (z > length - 6) return; // a slot pushed by the gate spacing may run a little past the usual end
 
     if (type === 'barrels') {
       const xs = rng.chance(0.6) ? [rng.pick(LANES)] : [-1.8, 1.8];

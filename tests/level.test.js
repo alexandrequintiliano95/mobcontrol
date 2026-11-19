@@ -71,3 +71,7 @@ test('barrels keep some distance from gates', () => {
     for (const g of l.gates) for (const b of l.barrels) assert.ok(Math.abs(b.z - g.z) >= 17, `op ${n}: barril em ${b.z.toFixed(1)}, portão em ${g.z.toFixed(1)}`);
   }
 });
+test('gate spacing never drops the barrel after the last gate', () => {
+  const l = generateLevel(40), lastGate = l.gates.at(-1).z;
+  assert.ok(l.barrels.some((b) => b.z > lastGate && b.z <= l.length));
+});
