@@ -69,8 +69,12 @@ export function createProps(scene, game) {
     return { ref: g, group, panelMat, text, last: null, pulse: 0, fade: 1 };
   });
 
-  const boss = new Mesh(bossGeometry(), material);
-  boss.scale.setScalar(4);
+  const BOSS_LOOK = { brute: [1, 1, 1, 4], summoner: [0.8, 0.65, 1.4, 4.4], charger: [1.5, 0.6, 0.5, 3.4] };
+  const look = BOSS_LOOK[game.boss.kind] ?? BOSS_LOOK.brute;
+  const bossMaterial = new MeshLambertMaterial({ vertexColors: true });
+  bossMaterial.color.setRGB(look[0], look[1], look[2]);
+  const boss = new Mesh(bossGeometry(), bossMaterial);
+  boss.scale.setScalar(look[3]);
   boss.rotation.y = Math.PI;
   root.add(boss);
 
@@ -118,6 +122,7 @@ export function createProps(scene, game) {
       shared.barrel.dispose(); shared.rider.dispose(); shared.frame.dispose(); shared.panel.dispose();
       for (const w of Object.values(shared.weapons)) w.dispose();
       boss.geometry.dispose();
+      bossMaterial.dispose();
       material.dispose();
     },
   };

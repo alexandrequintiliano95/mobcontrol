@@ -12,6 +12,10 @@ const ZOMBIE_LOOK = {
   walker: { scale: 1, color: new Color(1, 1, 1) },
   runner: { scale: 0.92, color: new Color(1.15, 1.2, 0.85) },
   brute: { scale: 1.7, color: new Color(0.75, 0.8, 0.75) },
+  shield: { scale: 1.05, color: new Color(0.85, 0.95, 1.1) },
+  bomber: { scale: 0.95, color: new Color(1.7, 0.75, 0.45) },
+  fatty: { scale: 1.45, color: new Color(1.1, 0.8, 1.25) },
+  mini: { scale: 0.6, color: new Color(1.25, 1.35, 0.9) },
 };
 const WHITE = new Color(1, 1, 1);
 const GLOW = new Color(1.9, 1.7, 0.6);
@@ -30,6 +34,7 @@ export function createActors(scene) {
   const soldierLegs = instanced(legGeometry(), lambert, CAP.soldiers * 2);
   const zombieBodies = instanced(zombieGeometry({ legs: false }), lambert, CAP.zombies);
   const zombieLegs = instanced(zombieLegGeometry(), lambert, CAP.zombies * 2);
+  const shields = instanced(new BoxGeometry(0.7, 0.85, 0.08), new MeshLambertMaterial({ color: 0x9fb4c7 }), CAP.zombies);
   const bullets = instanced(new BoxGeometry(0.09, 0.09, 0.9), new MeshBasicMaterial({ color: 0xffe27a, transparent: true, opacity: 0.95, blending: AdditiveBlending, depthWrite: false }), CAP.bullets);
   const flashes = instanced(new SphereGeometry(0.13, 6, 4), new MeshBasicMaterial({ color: 0xffc94d, transparent: true, opacity: 0.9, blending: AdditiveBlending, depthWrite: false }), CAP.soldiers);
   const shadowGeo = new CircleGeometry(0.3, 12).rotateX(-Math.PI / 2);
@@ -39,7 +44,7 @@ export function createActors(scene) {
   barBack.renderOrder = barFill.renderOrder = 5;
   soldierBodies.setColorAt(0, WHITE);
   zombieBodies.setColorAt(0, WHITE);
-  const all = [soldierBodies, soldierLegs, zombieBodies, zombieLegs, bullets, flashes, shadows, barBack, barFill];
+  const all = [soldierBodies, soldierLegs, zombieBodies, zombieLegs, shields, bullets, flashes, shadows, barBack, barFill];
   for (const m of all) scene.add(m);
 
   const d = new Object3D();
@@ -103,14 +108,21 @@ export function createActors(scene) {
     soldierBodies.count = s;
     soldierLegs.count = s * 2;
 
-    let z = 0, b = 0;
+    let z = 0, b = 0, sz = 0;
     if (camera) d.quaternion.copy(camera.quaternion);
     for (const zb of game.zombies) {
       if (!zb.alive || zb.z < minZ || zb.z > maxZ || z >= CAP.zombies) continue;
       const look = ZOMBIE_LOOK[zb.kind];
       const speed = zb.active ? (zb.kind === 'runner' ? 1.4 : 0.8) : 0.15;
       putFigure(zombieBodies, zombieLegs, z, zb.x, zb.z, look.scale, time * 7 + zb.id * 1.7, speed, Math.PI, 0.38);
-      zombieBodies.setColorAt(z, look.color);
+      zombieBodies.setColorAt(z, zb.kind === 'bomber' && Math.sin(time * 14 + zb.id) > 0 ? GLOW : look.color);
+      if (zb.shield > 0) {
+        d.position.set(zb.x, 0.62 * look.scale, -zb.z + 0.38);
+        d.rotation.set(0, 0, 0);
+        d.scale.set(1, 1, 1);
+        d.updateMatrix();
+        shields.setMatrixAt(sz++, d.matrix);
+      }
       sh = putShadow(sh, zb.x, zb.z, look.scale * 1.1);
       z++;
       if (zb.hp < zb.maxHp && b < CAP.bars && camera) {
@@ -132,6 +144,7 @@ export function createActors(scene) {
     d.scale.set(1, 1, 1);
     zombieBodies.count = z;
     zombieLegs.count = z * 2;
+    shields.count = sz;
     barBack.count = barFill.count = b;
 
     let n = 0;

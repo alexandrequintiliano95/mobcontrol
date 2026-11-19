@@ -44,6 +44,9 @@ const FEEDBACK = {
   soldierKilled: ['soldierDown', 'light'],
   bossSpawn: ['bossRoar', 'heavy'],
   bossKilled: ['explode'],
+  zombieExploded: ['explode', 'medium'],
+  shieldBroken: ['hit'],
+  bossSummon: ['bossRoar'],
   won: ['win', 'win'],
   lost: ['lose', 'lose'],
 };

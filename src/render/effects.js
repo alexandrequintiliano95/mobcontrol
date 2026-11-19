@@ -83,6 +83,17 @@ export function createEffects(scene) {
         if (goo.length >= CAP.goo) goo.shift();
         goo.push({ x: e.x + (Math.random() - 0.5) * 0.3, z: -e.z, s: 0.6 + Math.random() * 0.7, life: 6, color: GOO[Math.floor(Math.random() * GOO.length)], rot: Math.random() * 3 });
         break;
+      case 'zombieExploded':
+        burst(e.x, e.z, 40, FIRE, 1.2);
+        blast(e.x, e.z, 1.6);
+        fx.shake = Math.max(fx.shake, 0.35);
+        break;
+      case 'shieldBroken':
+        burst(e.x, e.z, 14, [0x9fb4c7, 0x6d7178, 0xffffff], 0.8);
+        break;
+      case 'bossSummon':
+        burst(e.x, e.z, 30, GOO, 1.4, 1.5);
+        break;
       case 'soldierKilled':
         burst(e.x, e.z, 5, [0x2f6fde, 0x1d3f7a, 0xffffff], 0.6);
         break;

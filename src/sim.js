@@ -10,6 +10,12 @@ import { createRng } from './rng.js';
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const BULLET_SPAWN_AHEAD = 0.3;
 
+function makeZombie(id, kind, x, z, hp, active) {
+  const spec = ZOMBIES[kind];
+  const scale = hp / spec.hp;
+  return { id, kind, x, z, hp, maxHp: hp, shield: (spec.shield ?? 0) * scale, active, alive: true };
+}
+
 export function createGame(level, options = {}) {
   const rng = createRng(options.seed ?? level.number * 7919 + 1);
   const game = {
@@ -26,8 +32,8 @@ export function createGame(level, options = {}) {
     bullets: [],
     barrels: level.barrels.map((b) => ({ id: b.id, x: b.x, z: b.z, hp: b.hp, maxHp: b.hp, reward: b.reward, alive: true })),
     gates: level.gates.map((g) => ({ id: g.id, side: g.side, z: g.z, value: g.value, passed: false })),
-    zombies: level.zombies.map((z) => ({ id: z.id, kind: z.kind, x: z.x, z: z.z, hp: z.hp, maxHp: z.hp, active: false, alive: true })),
-    boss: { x: 0, z: level.length + BOSS_GAP, hp: level.boss.hp, maxHp: level.boss.hp, active: false, alive: true, biteTimer: 0 },
+    zombies: level.zombies.map((z) => makeZombie(z.id, z.kind, z.x, z.z, z.hp, false)),
+    boss: { x: 0, z: level.length + BOSS_GAP, hp: level.boss.hp, maxHp: level.boss.hp, active: false, alive: true, biteTimer: 0, kind: level.boss.kind ?? 'brute', summonTimer: 0 },
     events: [],
   };
   const ids = [...level.barrels, ...level.gates, ...level.zombies].map((e) => e.id);
@@ -69,7 +75,18 @@ export function stepGame(game, dt, input) {
 function moveBoss(game, dt) {
   const boss = game.boss;
   if (!boss.active || !boss.alive || game.phase !== 'boss') return;
-  boss.z -= BOSS.speed * dt;
+  boss.z -= (boss.kind === 'charger' ? BOSS.chargerSpeed : BOSS.speed) * dt;
+  if (boss.kind === 'summoner') {
+    boss.summonTimer += dt;
+    if (boss.summonTimer >= BOSS.summonEvery) {
+      boss.summonTimer = 0;
+      for (let i = 0; i < BOSS.summonCount; i++) {
+        const x = clamp(boss.x + (i - 1) * 1.2, -ROAD_HALF + 0.35, ROAD_HALF - 0.35);
+        game.zombies.push(makeZombie(game.nextId++, 'walker', x, boss.z - 1.5, ZOMBIES.walker.hp * (1 + game.level.number * 0.25), true));
+      }
+      game.events.push({ type: 'bossSummon', x: boss.x, z: boss.z });
+    }
+  }
   boss.x += clamp(game.squad.x - boss.x, -1, 1) * 0.6 * dt;
   const touching = game.soldiers.some((s) => Math.hypot(s.x - boss.x, s.z - boss.z) < BOSS.radius + SOLDIER_RADIUS);
   if (!touching) return;
@@ -123,7 +140,9 @@ function passGates(game) {
 
 function moveZombies(game, dt) {
   const { squad } = game;
-  for (const zb of game.zombies) {
+  const count = game.zombies.length;
+  for (let zi = 0; zi < count; zi++) {
+    const zb = game.zombies[zi];
     if (!zb.alive) continue;
     if (!zb.active) {
       if (zb.z - squad.z < ZOMBIE_ACTIVATE_DIST) zb.active = true;
@@ -136,8 +155,7 @@ function moveZombies(game, dt) {
     const reach = spec.radius + SOLDIER_RADIUS;
     if (game.soldiers.some((s) => Math.abs(s.z - zb.z) < reach && Math.hypot(s.x - zb.x, s.z - zb.z) < reach)) {
       killNearest(game, zb.x, zb.z, spec.kills, 'zombie');
-      zb.alive = false;
-      game.events.push({ type: 'zombieKilled', id: zb.id, kind: zb.kind, x: zb.x, z: zb.z });
+      killZombie(game, zb);
     }
   }
 }
@@ -271,10 +289,36 @@ function damage(game, t, amount) {
 
 function damageZombie(game, zb, amount) {
   if (!zb.alive) return;
+  if (zb.shield > 0) {
+    zb.shield -= amount;
+    if (zb.shield <= 0) game.events.push({ type: 'shieldBroken', id: zb.id, x: zb.x, z: zb.z });
+    return;
+  }
   zb.hp -= amount;
   if (zb.hp > 0) return;
+  killZombie(game, zb);
+}
+
+function killZombie(game, zb) {
   zb.alive = false;
   game.events.push({ type: 'zombieKilled', id: zb.id, kind: zb.kind, x: zb.x, z: zb.z });
+  const spec = ZOMBIES[zb.kind];
+  if (spec.blast) explode(game, zb);
+  if (spec.splits) {
+    for (let i = 0; i < spec.splits; i++) {
+      const a = (i / spec.splits) * Math.PI * 2;
+      game.zombies.push(makeZombie(game.nextId++, 'mini', clamp(zb.x + Math.cos(a) * 0.5, -ROAD_HALF + 0.3, ROAD_HALF - 0.3), zb.z + Math.sin(a) * 0.5, ZOMBIES.mini.hp * (zb.maxHp / spec.hp) ** 0.5, true));
+    }
+  }
+}
+
+function explode(game, zb) {
+  const r = ZOMBIES[zb.kind].blast;
+  game.events.push({ type: 'zombieExploded', x: zb.x, z: zb.z });
+  for (let i = game.soldiers.length - 1; i >= 0; i--) {
+    const s = game.soldiers[i];
+    if (Math.hypot(s.x - zb.x, s.z - zb.z) < r) killSoldier(game, i, 'zombie');
+  }
 }
 
 function damageBoss(game, boss, amount) {

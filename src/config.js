@@ -31,6 +31,11 @@ export const ZOMBIES = {
   walker: { hp: 3, speed: 1.6, radius: 0.35, kills: 1 },
   runner: { hp: 1.5, speed: 3.6, radius: 0.3, kills: 1 },
   brute: { hp: 14, speed: 1.1, radius: 0.6, kills: 4 },
+  shield: { hp: 3, shield: 10, speed: 1.3, radius: 0.4, kills: 1 },
+  bomber: { hp: 2, speed: 2.4, radius: 0.35, kills: 0, blast: 1.4 },
+  fatty: { hp: 12, speed: 0.9, radius: 0.55, kills: 2, splits: 4 },
+  mini: { hp: 1, speed: 3.2, radius: 0.25, kills: 1 },
 };
+export const BOSS_KINDS = ['brute', 'summoner', 'charger'];
 
-export const BOSS = { radius: 1.6, speed: 1.3, killRate: 6, minSeconds: 7 };
+export const BOSS = { radius: 1.6, speed: 1.3, killRate: 6, minSeconds: 7, summonEvery: 2.5, summonCount: 3, chargerSpeed: 2.2 };

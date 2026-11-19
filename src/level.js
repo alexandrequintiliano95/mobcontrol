@@ -1,6 +1,6 @@
 // Procedural level ("Operação N") generator. Deterministic per level number.
 import { createRng } from './rng.js';
-import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS } from './config.js';
+import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS, BOSS_KINDS } from './config.js';
 
 // Difficulty knobs, grouped for tuning.
 export const DIFFICULTY = {
@@ -90,7 +90,12 @@ export function generateLevel(n) {
       const group = [];
       const add = (kind) => { const hp = ZOMBIES[kind].hp * hpScale; budget -= hp; group.push({ kind, hp }); };
       if (n >= 3 && i > D.warmupSlots + 3 && rng.chance(0.4)) add('brute');
-      while (budget > 0 && group.length < D.maxHorde) add(n >= 2 && rng.chance(0.25) ? 'runner' : 'walker');
+      const late = i > D.warmupSlots + 3;
+      if (late && n >= 5 && rng.chance(0.5)) add('bomber');
+      if (late && n >= 6 && rng.chance(0.4)) add('fatty');
+      while (budget > 0 && group.length < D.maxHorde) {
+        add(late && n >= 4 && rng.chance(0.15) ? 'shield' : n >= 2 && rng.chance(0.25) ? 'runner' : 'walker');
+      }
       if (group.length === 0) group.push({ kind: 'walker', hp: ZOMBIES.walker.hp * hpScale });
       for (const zb of group) {
         if (level.zombies.length >= D.maxZombies) break;
@@ -105,6 +110,7 @@ export function generateLevel(n) {
     expN = clamp(expN, 1, MAX_SOLDIERS);
   });
 
+  level.boss.kind = BOSS_KINDS[Math.floor((n - 1) / 5) % BOSS_KINDS.length];
   level.boss.hp = Math.max(150 * n, Math.round(expDps() * (D.bossSeconds + n)));
   return level;
 }
