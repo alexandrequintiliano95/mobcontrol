@@ -38,7 +38,7 @@ export function createGame(level, options = {}) {
   };
   const ids = [...level.barrels, ...level.gates, ...level.zombies].map((e) => e.id);
   game.nextId = (ids.length ? Math.max(...ids) : 0) + 1;
-  addSoldiers(game, 1);
+  addSoldiers(game, level.startSoldiers ?? 1);
   return game;
 }
 

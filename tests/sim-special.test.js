@@ -56,3 +56,9 @@ test('the new zombie kinds show up in later operations', () => {
   for (const k of ['shield', 'bomber', 'fatty']) assert.ok(kinds.has(k), k);
   assert.ok(!generateLevel(1).zombies.some((z) => ['shield', 'bomber', 'fatty'].includes(z.kind)));
 });
+
+test('later operations start with a bigger squad', () => {
+  assert.equal(createGame(generateLevel(1)).soldiers.length, 1);
+  assert.ok(createGame(generateLevel(20)).soldiers.length >= 5);
+  assert.ok(createGame(generateLevel(40)).soldiers.length <= 15);
+});

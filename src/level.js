@@ -10,7 +10,7 @@ export const DIFFICULTY = {
   weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
   accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, baitChance: 0.15, baitHp: 2.5,
   blueGateChance: 0.3, hordeSeconds: 2.4, maxHorde: 60, maxZombies: 1500,
-  zombieHpPerLevel: 0.25, bossSeconds: 30,
+  zombieHpPerLevel: 0.15, bossSeconds: 30,
 };
 
 const LANES = [-1.8, 0, 1.8];
@@ -21,7 +21,9 @@ export function generateLevel(n) {
   const D = DIFFICULTY;
   const rng = createRng(n * 9973 + 17);
   const length = D.baseLength + D.lengthPerLevel * Math.min(n - 1, D.maxLengthSteps);
-  const level = { number: n, length, barrels: [], gates: [], zombies: [], boss: { hp: 0 } };
+  // From operation 9 the squad starts bigger, so the opening is not a death trap.
+  const startSoldiers = Math.min(15, 1 + Math.floor(Math.max(0, n - 8) / 2.4));
+  const level = { number: n, length, startSoldiers, barrels: [], gates: [], zombies: [], boss: { hp: 0 } };
   let nextId = 1;
 
   const slots = [];
@@ -32,7 +34,7 @@ export function generateLevel(n) {
     return best;
   });
 
-  let expN = 1, expWeapon = 'rifle';
+  let expN = startSoldiers, expWeapon = 'rifle';
   const expDps = () => expN * WEAPONS[expWeapon].damage * WEAPONS[expWeapon].rate * D.accuracy;
   const addBarrel = (x, z, hp, reward) => level.barrels.push({ id: nextId++, x, z, hp, reward });
 
@@ -45,7 +47,7 @@ export function generateLevel(n) {
     }
     if (i === 1) {
       const side = level.barrels[0].x < 0 ? 1 : -1;
-      level.gates.push({ id: nextId++, side, z, value: -Math.min(60, 4 + n) });
+      level.gates.push({ id: nextId++, side, z, value: -Math.min(10, 4 + Math.floor(n / 4)) });
       lastWasGate = true;
       return;
     }
@@ -85,7 +87,7 @@ export function generateLevel(n) {
       }
       level.gates.push({ id: nextId++, side, z, value });
     } else {
-      let budget = expDps() * D.hordeSeconds * (i === D.warmupSlots ? 0.9 : 0.8 + 0.1 * n);
+      let budget = expDps() * D.hordeSeconds * (i === D.warmupSlots ? 0.6 : 0.8 + 0.1 * n);
       const early = i <= D.warmupSlots + 3; // opening hordes keep base hp
       const hpScale = early ? 1 : 1 + D.zombieHpPerLevel * (n - 1);
       const cx = rng.range(-1.8, 1.8);
