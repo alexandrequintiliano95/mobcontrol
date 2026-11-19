@@ -5,12 +5,12 @@ import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS } from './confi
 // Difficulty knobs, grouped for tuning.
 export const DIFFICULTY = {
   baseLength: 220, lengthPerLevel: 20, maxLengthSteps: 10,
-  slotGap: [11, 16], firstBarrelHp: 4,
+  firstSlotZ: 18, slotGap: [11, 16], firstBarrelHp: 4, warmupSlots: 4,
   weaponSlots: [0.3, 0.62], weaponHpSeconds: 3,
   weights: { barrels: 0.45, gate: 0.2, horde: 0.35 },
-  accuracy: 0.6, barrelWindow: 3.2, baitChance: 0.15, baitHp: 2.5,
-  blueGateChance: 0.3, hordeSeconds: 2.2, maxHorde: 60, maxZombies: 1500,
-  zombieHpPerLevel: 0.25, bossSeconds: 10,
+  accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, baitChance: 0.15, baitHp: 2.5,
+  blueGateChance: 0.3, hordeSeconds: 1.6, maxHorde: 60, maxZombies: 1500,
+  zombieHpPerLevel: 0.25, bossSeconds: 30,
 };
 
 const LANES = [-1.8, 0, 1.8];
@@ -25,7 +25,7 @@ export function generateLevel(n) {
   let nextId = 1;
 
   const slots = [];
-  for (let z = 14; z <= length - 16; z += rng.range(D.slotGap[0], D.slotGap[1])) slots.push(z);
+  for (let z = D.firstSlotZ; z <= length - 16; z += rng.range(D.slotGap[0], D.slotGap[1])) slots.push(z);
   const weaponSlotIdx = D.weaponSlots.map((f) => {
     let best = 2;
     for (let i = 2; i < slots.length; i++) if (Math.abs(slots[i] - f * length) < Math.abs(slots[best] - f * length)) best = i;
@@ -59,16 +59,17 @@ export function generateLevel(n) {
     }
     let roll = rng.next() * (lastWasGate ? D.weights.barrels + D.weights.horde : 1);
     let type = roll < D.weights.barrels ? 'barrels' : roll < D.weights.barrels + D.weights.horde ? 'horde' : 'gate';
+    if (i < D.warmupSlots) type = 'barrels';
     lastWasGate = type === 'gate';
 
     if (type === 'barrels') {
       const xs = rng.chance(0.6) ? [rng.pick(LANES)] : [-1.8, 1.8];
       for (const x of xs) {
         const bait = rng.chance(D.baitChance);
-        const count = Math.min(12, rng.int(1, 3) + Math.floor(expN / 12)) * (bait ? 2 : 1);
-        const hp = Math.max(2, Math.round(expDps() * D.barrelWindow * rng.range(0.5, 1.0) * (bait ? D.baitHp : 1)));
+        const count = Math.min(12, rng.int(D.rewardMin, D.rewardMax) + Math.floor(expN / D.rewardPerSoldiers)) * (bait ? 2 : 1);
+        const hp = Math.max(2, Math.round(expDps() * D.barrelWindow * rng.range(0.45, 0.9) * (bait ? D.baitHp : 1)));
         addBarrel(x, z, hp, { kind: 'soldiers', count });
-        expN += count * (bait ? 0.3 : 0.7);
+        expN += (count * (bait ? 0.3 : D.expGain)) / xs.length;
       }
     } else if (type === 'gate') {
       const side = rng.pick([-1, 1]);

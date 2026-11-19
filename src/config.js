@@ -19,7 +19,7 @@ export const DRAG_GAIN = 1.3;
 export const KEY_SPEED = 9;
 
 export const WEAPONS = {
-  rifle: { label: 'Fuzil', damage: 1, rate: 2.2, pierce: 1, splash: 0 },
+  rifle: { label: 'Fuzil', damage: 1, rate: 3, pierce: 1, splash: 0 },
   smg: { label: 'Metralhadora', damage: 0.75, rate: 6, pierce: 1, splash: 0 },
   sniper: { label: 'Sniper', damage: 6, rate: 0.9, pierce: 4, splash: 0 },
   bazooka: { label: 'Bazuca', damage: 7, rate: 0.9, pierce: 1, splash: 1.6 },
