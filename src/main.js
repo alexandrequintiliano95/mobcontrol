@@ -5,7 +5,7 @@ import { autopilot } from './autopilot.js';
 import { createView } from './render/view.js';
 import { createUi } from './ui.js';
 import { createInput } from './input.js';
-import { loadSave, saveSave } from './storage.js';
+import { loadSave, saveSave, MAX_LEVEL } from './storage.js';
 import { advanceClock } from './clock.js';
 import { createAudio } from './audio.js';
 import { createHaptics, createWakeLock } from './device.js';
@@ -73,7 +73,7 @@ document.addEventListener('pointerdown', () => audio.unlock(), { capture: true }
 let state = 'menu';
 let game = null;
 // ?level=N only picks the operation to play; it never overwrites saved progress.
-let levelNumber = params.has('level') ? Math.max(1, Math.floor(Number(params.get('level'))) || 1) : save.level;
+let levelNumber = params.has('level') ? Math.min(MAX_LEVEL, Math.max(1, Math.floor(Number(params.get('level'))) || 1)) : save.level;
 let endTimer = 0;
 let lastShots = 0, lastHits = 0;
 const clock = { acc: 0 };
@@ -125,8 +125,9 @@ ui.onAction((action) => {
 
 function pauseIfPlaying() {
   if (state === 'playing') setState('paused');
+  input.reset(input.update(0));
 }
-document.addEventListener('visibilitychange', () => { if (document.hidden) pauseIfPlaying(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) pauseIfPlaying(); else audio.unlock(); });
 addEventListener('pagehide', pauseIfPlaying);
 addEventListener('blur', pauseIfPlaying);
 addEventListener('resize', () => view.resize());

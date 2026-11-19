@@ -33,6 +33,7 @@ export function createInput(el, { width, keyTarget = globalThis } = {}) {
   el.addEventListener('pointermove', move);
   el.addEventListener('pointerup', up);
   el.addEventListener('pointercancel', up);
+  el.addEventListener('lostpointercapture', up);
   keyTarget.addEventListener('keydown', keydown);
   keyTarget.addEventListener('keyup', keyup);
 

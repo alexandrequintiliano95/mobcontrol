@@ -31,7 +31,7 @@ export function createAudio() {
         const data = noiseBuf.getChannelData(0);
         for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
       }
-      if (ctx.state === 'suspended') ctx.resume();
+      if (ctx.state !== 'running') ctx.resume();
     } catch { /* audio unavailable */ }
   };
 

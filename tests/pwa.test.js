@@ -23,3 +23,8 @@ test('index.html links the manifest and the iPhone icon', () => {
   const html = readFileSync('index.html', 'utf8');
   for (const s of ['rel="manifest"', 'rel="apple-touch-icon"', 'viewport-fit=cover', 'name="theme-color"']) assert.ok(html.includes(s), s);
 });
+test('the service worker goes to the network first, so a new deploy never mixes old and new modules', () => {
+  const sw = readFileSync('sw.js', 'utf8');
+  const fetchHandler = sw.slice(sw.indexOf("addEventListener('fetch'"));
+  assert.ok(fetchHandler.indexOf('fetch(req)') < fetchHandler.indexOf('cache.match'));
+});

@@ -1,4 +1,4 @@
-// Service worker: precache everything, answer from cache, refresh in the background.
+// Service worker: precache everything; network first, cache when offline.
 const CACHE = 'esquadrao-z-v1';
 const ASSETS = [
   './',
@@ -51,20 +51,16 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
   const key = req.mode === 'navigate' ? './index.html' : req;
+  // Network first (always a consistent, current version online); cache when offline.
   event.respondWith(
-    caches.open(CACHE).then(async (cache) => {
-      const cached = await cache.match(key, { ignoreSearch: true });
-      const network = fetch(req)
-        .then((res) => {
-          if (res.ok) cache.put(key, res.clone());
-          return res;
-        })
-        .catch(() => cached);
-      if (cached) {
-        event.waitUntil(network.catch(() => {}));
-        return cached;
-      }
-      return network;
-    }),
+    fetch(req)
+      .then(async (res) => {
+        if (res.ok) (await caches.open(CACHE)).put(key, res.clone());
+        return res;
+      })
+      .catch(async () => {
+        const cache = await caches.open(CACHE);
+        return (await cache.match(key, { ignoreSearch: true })) || Response.error();
+      }),
   );
 });

@@ -13,3 +13,4 @@ test('blocked storage (private mode) never throws', () => {
   assert.deepEqual(loadSave(blocked), DEFAULTS); assert.doesNotThrow(() => saveSave({ level: 2, sound: true, vibe: true }, blocked));
   assert.deepEqual(loadSave(undefined), DEFAULTS);
 });
+test('an absurd saved level is clamped so the game stays winnable', () => assert.equal(loadSave(mem({ [SAVE_KEY]: '{"level":1e300}' })).level, 9999));
