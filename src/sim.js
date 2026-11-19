@@ -2,6 +2,7 @@
 import {
   ROAD_HALF, SQUAD_SPEED, STEER_SPEED, SOLDIER_RADIUS, SOLDIER_FOLLOW, MAX_SOLDIERS,
   BULLET_SPEED, BULLET_RANGE, BARREL_RADIUS, RECRUIT_SPEED, WEAPONS, BOSS_GAP,
+  GATE_PER_DAMAGE, GATE_MAX, ZOMBIES, ZOMBIE_ACTIVATE_DIST, ZOMBIE_HOMING, BOSS,
 } from './config.js';
 import { formationOffsets, formationHalfWidth, formationRadius } from './formation.js';
 import { createRng } from './rng.js';
@@ -58,6 +59,85 @@ export function stepGame(game, dt, input) {
   fire(game, dt);
   moveBullets(game, dt);
   moveRecruits(game, dt);
+  passGates(game);
+  moveZombies(game, dt);
+  crashBarrels(game);
+  checkLost(game);
+}
+
+const onGateSide = (gate, x) => (gate.side === 1 ? x >= 0 : x < 0);
+
+function killSoldier(game, index, cause) {
+  const [s] = game.soldiers.splice(index, 1);
+  game.events.push({ type: 'soldierKilled', x: s.x, z: s.z, cause });
+}
+
+function killNearest(game, x, z, count, cause) {
+  for (let k = 0; k < count && game.soldiers.length; k++) {
+    let best = 0, bestD = Infinity;
+    game.soldiers.forEach((s, i) => { const d = (s.x - x) ** 2 + (s.z - z) ** 2; if (d < bestD) { bestD = d; best = i; } });
+    killSoldier(game, best, cause);
+  }
+}
+
+function checkLost(game) {
+  if (game.soldiers.length === 0 && (game.phase === 'run' || game.phase === 'boss')) {
+    game.phase = 'lost';
+    game.events.push({ type: 'lost' });
+  }
+}
+
+function passGates(game) {
+  const { squad } = game;
+  for (const g of game.gates) {
+    if (g.passed || squad.z < g.z) continue;
+    g.passed = true;
+    if (!onGateSide(g, squad.x)) continue;
+    const v = Math.round(g.value);
+    if (v > 0) addSoldiers(game, v, { x: squad.x, z: squad.z });
+    if (v < 0) {
+      const n = Math.min(-v, game.soldiers.length);
+      // Remove from the back of the squad first.
+      const order = game.soldiers.map((s, i) => [s.z, i]).sort((a, b) => a[0] - b[0]).slice(0, n).map((e) => e[1]).sort((a, b) => b - a);
+      for (const i of order) killSoldier(game, i, 'gate');
+    }
+    game.events.push({ type: 'gate', id: g.id, value: v, x: g.side * ROAD_HALF / 2, z: g.z });
+  }
+}
+
+function moveZombies(game, dt) {
+  const { squad } = game;
+  for (const zb of game.zombies) {
+    if (!zb.alive) continue;
+    if (!zb.active) {
+      if (zb.z - squad.z < ZOMBIE_ACTIVATE_DIST) zb.active = true;
+      else continue;
+    }
+    const spec = ZOMBIES[zb.kind];
+    zb.z -= spec.speed * dt;
+    zb.x += clamp(squad.x - zb.x, -1, 1) * ZOMBIE_HOMING * spec.speed * dt;
+    if (zb.z < squad.z - 8) { zb.alive = false; continue; }
+    const reach = spec.radius + SOLDIER_RADIUS;
+    if (game.soldiers.some((s) => Math.abs(s.z - zb.z) < reach && Math.hypot(s.x - zb.x, s.z - zb.z) < reach)) {
+      killNearest(game, zb.x, zb.z, spec.kills, 'zombie');
+      zb.alive = false;
+      game.events.push({ type: 'zombieKilled', id: zb.id, kind: zb.kind, x: zb.x, z: zb.z });
+    }
+  }
+}
+
+function crashBarrels(game) {
+  const reach = BARREL_RADIUS + SOLDIER_RADIUS;
+  for (const b of game.barrels) {
+    if (!b.alive || Math.abs(b.z - game.squad.z) > 20) continue;
+    if (!game.soldiers.some((s) => Math.hypot(s.x - b.x, s.z - b.z) < reach)) continue;
+    b.alive = false;
+    let killed = 0;
+    for (let i = game.soldiers.length - 1; i >= 0; i--) {
+      if (Math.abs(game.soldiers[i].x - b.x) < reach) { killSoldier(game, i, 'barrel'); killed++; }
+    }
+    game.events.push({ type: 'barrelCrash', id: b.id, x: b.x, z: b.z, killed });
+  }
 }
 
 function moveSquad(game, dt, input) {
@@ -96,6 +176,8 @@ function collectTargets(game) {
   const minZ = game.squad.z - 12, maxZ = game.squad.z + BULLET_RANGE + 12;
   const targets = [];
   for (const b of game.barrels) if (b.alive && b.z > minZ && b.z < maxZ) targets.push({ kind: 'barrel', ref: b, r: BARREL_RADIUS });
+  for (const z of game.zombies) if (z.alive && z.active && z.z > minZ && z.z < maxZ) targets.push({ kind: 'zombie', ref: z, r: ZOMBIES[z.kind].radius });
+  if (game.boss.active && game.boss.alive) targets.push({ kind: 'boss', ref: game.boss, r: BOSS.radius });
   return targets;
 }
 
@@ -123,17 +205,51 @@ function hitTargets(game, b, targets) {
     if (o.z + t.r < b.prevZ || front > b.z) continue;
     hits.push({ key: Math.max(front, b.prevZ), t });
   }
+  for (const g of game.gates) {
+    if (!g.passed && b.prevZ < g.z && g.z <= b.z && onGateSide(g, b.x)) hits.push({ key: g.z, t: { kind: 'gate', ref: g } });
+  }
   if (!hits.length) return false;
   hits.sort((a, c) => a.key - c.key);
-  for (const { t } of hits) {
+  for (const { key, t } of hits) {
+    if (t.kind === 'gate') {
+      game.hits++;
+      t.ref.value = Math.min(GATE_MAX, t.ref.value + b.damage * GATE_PER_DAMAGE);
+      return true;
+    }
     if (!t.ref.alive) continue;
     game.hits++;
     b.hitIds.push(t.ref.id);
-    if (t.kind === 'barrel') damageBarrel(game, t.ref, b.damage);
+    if (b.splash > 0) {
+      if (t.kind !== 'zombie') damage(game, t, b.damage);
+      for (const z of game.zombies) {
+        if (z.alive && z.active && Math.hypot(z.x - b.x, z.z - key) <= b.splash) damage(game, { kind: 'zombie', ref: z }, b.damage);
+      }
+      return true;
+    }
+    damage(game, t, b.damage);
     b.pierce--;
     if (b.pierce <= 0) return true;
   }
   return false;
+}
+
+function damage(game, t, amount) {
+  if (t.kind === 'barrel') damageBarrel(game, t.ref, amount);
+  else if (t.kind === 'zombie') damageZombie(game, t.ref, amount);
+  else if (t.kind === 'boss') damageBoss(game, t.ref, amount);
+}
+
+function damageZombie(game, zb, amount) {
+  if (!zb.alive) return;
+  zb.hp -= amount;
+  if (zb.hp > 0) return;
+  zb.alive = false;
+  game.events.push({ type: 'zombieKilled', id: zb.id, kind: zb.kind, x: zb.x, z: zb.z });
+}
+
+function damageBoss(game, boss, amount) {
+  if (!boss.alive) return;
+  boss.hp -= amount;
 }
 
 function damageBarrel(game, barrel, damage) {
