@@ -6,10 +6,10 @@ import { emptyLevel, run, eventsOf } from './helpers/game.js';
 
 const zombie = (id, x, z, kind = 'walker', hp = ZOMBIES[kind].hp) => ({ id, kind, x, z, hp });
 test('a red gate on the squad side takes as many soldiers as its value', () => {
-  const g = createGame(emptyLevel({ gates: [{ id: 1, side: 1, z: 10, value: -40 }] }));
-  addSoldiers(g, 29); run(g, 2.5, { targetX: 3 });
+  const g = createGame(emptyLevel({ gates: [{ id: 1, side: 1, z: 10, value: -100 }] }));
+  addSoldiers(g, 19); run(g, 2.5, { targetX: 3 });
   const [e] = eventsOf(g, 'gate');
-  assert.ok(e.value < 0); assert.equal(g.soldiers.length, 30 + e.value);
+  assert.ok(e.value < 0 && -e.value < 20, `value ${e.value}`); assert.equal(g.soldiers.length, 20 + e.value);
   assert.equal(eventsOf(g, 'soldierKilled').filter((k) => k.cause === 'gate').length, -e.value);
 });
 test('the other side of a red gate is safe', () => {
