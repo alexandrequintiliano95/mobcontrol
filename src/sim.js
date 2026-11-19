@@ -62,7 +62,23 @@ export function stepGame(game, dt, input) {
   passGates(game);
   moveZombies(game, dt);
   crashBarrels(game);
+  moveBoss(game, dt);
   checkLost(game);
+}
+
+function moveBoss(game, dt) {
+  const boss = game.boss;
+  if (!boss.active || !boss.alive || game.phase !== 'boss') return;
+  boss.z -= BOSS.speed * dt;
+  boss.x += clamp(game.squad.x - boss.x, -1, 1) * 0.6 * dt;
+  const touching = game.soldiers.some((s) => Math.hypot(s.x - boss.x, s.z - boss.z) < BOSS.radius + SOLDIER_RADIUS);
+  if (!touching) return;
+  boss.biteTimer += dt;
+  const every = 1 / BOSS.killRate;
+  while (boss.biteTimer >= every && game.soldiers.length) {
+    boss.biteTimer -= every;
+    killNearest(game, boss.x, boss.z, 1, 'boss');
+  }
 }
 
 const onGateSide = (gate, x) => (gate.side === 1 ? x >= 0 : x < 0);
@@ -142,7 +158,15 @@ function crashBarrels(game) {
 
 function moveSquad(game, dt, input) {
   const { squad } = game;
-  if (game.phase === 'run') squad.z += SQUAD_SPEED * dt;
+  if (game.phase === 'run') {
+    squad.z += SQUAD_SPEED * dt;
+    if (squad.z >= game.level.length) {
+      squad.z = game.level.length;
+      game.phase = 'boss';
+      game.boss.active = true;
+      game.events.push({ type: 'bossSpawn' });
+    }
+  }
   const limit = Math.max(0, ROAD_HALF - formationHalfWidth(game.soldiers.length) - SOLDIER_RADIUS);
   const step = clamp((input?.targetX ?? 0) - squad.x, -STEER_SPEED * dt, STEER_SPEED * dt);
   squad.x = clamp(squad.x + step, -limit, limit);
@@ -250,9 +274,15 @@ function damageZombie(game, zb, amount) {
 function damageBoss(game, boss, amount) {
   if (!boss.alive) return;
   boss.hp -= amount;
+  if (boss.hp > 0) return;
+  boss.alive = false;
+  game.events.push({ type: 'bossKilled', x: boss.x, z: boss.z });
+  game.phase = 'won';
+  game.events.push({ type: 'won' });
 }
 
 function damageBarrel(game, barrel, damage) {
+  if (!barrel.alive) return;
   barrel.hp -= damage;
   if (barrel.hp > 0) return;
   barrel.alive = false;

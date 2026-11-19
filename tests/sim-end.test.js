@@ -1,0 +1,33 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createGame, addSoldiers, stepGame } from '../src/sim.js';
+import { BOSS, BOSS_GAP } from '../src/config.js';
+import { emptyLevel, run, eventsOf } from './helpers/game.js';
+
+test('reaching the end of the road stops the squad and wakes the boss', () => {
+  const g = createGame(emptyLevel({ length: 21, boss: { hp: 1e9 } }));
+  assert.equal(g.boss.z, 21 + BOSS_GAP);
+  run(g, 3.2);
+  assert.equal(g.phase, 'boss'); assert.equal(g.squad.z, 21); assert.equal(g.boss.active, true);
+  assert.equal(eventsOf(g, 'bossSpawn').length, 1);
+  run(g, 1); assert.equal(g.squad.z, 21); assert.ok(g.boss.z < 21 + BOSS_GAP);
+});
+test('the boss bites BOSS.killRate soldiers per second while touching the squad', () => {
+  const g = createGame(emptyLevel({ length: 1, boss: { hp: 1e9 } }));
+  addSoldiers(g, 99);
+  const bites = () => eventsOf(g, 'soldierKilled').filter((e) => e.cause === 'boss').length;
+  for (let i = 0; i < 3600 && bites() === 0; i++) stepGame(g, 1 / 60, { targetX: 0 });
+  const before = bites(); run(g, 2);
+  assert.ok(Math.abs(bites() - before - 2 * BOSS.killRate) <= 1);
+});
+test('killing the boss wins and freezes the game', () => {
+  const g = createGame(emptyLevel({ length: 1, boss: { hp: 5 } }));
+  addSoldiers(g, 9); run(g, 10);
+  assert.equal(g.phase, 'won'); assert.equal(eventsOf(g, 'bossKilled').length, 1); assert.equal(eventsOf(g, 'won').length, 1);
+  const t = g.time; run(g, 1); assert.equal(g.time, t);
+});
+test('losing the last soldier loses the game', () => {
+  const g = createGame(emptyLevel({ gates: [{ id: 1, side: 1, z: 5, value: -50 }] }));
+  run(g, 2, { targetX: 3 });
+  assert.equal(g.phase, 'lost'); assert.equal(g.soldiers.length, 0); assert.equal(eventsOf(g, 'lost').length, 1);
+});
