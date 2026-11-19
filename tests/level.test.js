@@ -65,3 +65,9 @@ test('from operation 25 the first weapon shows up at 30% of the road', () => {
   assert.ok(first(24) > 0.4);
   assert.ok(Math.abs(first(25) - 0.3) < 0.05 && Math.abs(first(31) - 0.3) < 0.05);
 });
+test('barrels keep some distance from gates', () => {
+  for (let n = 1; n <= 40; n++) {
+    const l = generateLevel(n);
+    for (const g of l.gates) for (const b of l.barrels) assert.ok(Math.abs(b.z - g.z) >= 17, `op ${n}: barril em ${b.z.toFixed(1)}, portão em ${g.z.toFixed(1)}`);
+  }
+});

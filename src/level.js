@@ -9,7 +9,7 @@ export const DIFFICULTY = {
   weaponSlots: [0.45, 0.75], weaponHpSeconds: 3,
   weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
   accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, baitChance: 0.15, baitHp: 2.5,
-  blueGateChance: 0.3, hordeSeconds: 3.0, maxHorde: 45, maxZombies: 1500,
+  blueGateChance: 0.3, gateBarrelGap: 17, hordeSeconds: 3.0, maxHorde: 45, maxZombies: 1500,
   zombieHpPerLevel: 0.2, bossSeconds: 30,
 };
 
@@ -46,14 +46,25 @@ export function generateLevel(n) {
   const addBarrel = (x, z, hp, reward) => level.barrels.push({ id: nextId++, x, z, hp: Math.min(hp, maxBarrelHp), reward });
 
   let lastWasGate = false;
-  slots.forEach((z, i) => {
+  // Barrels and gates keep at least gateBarrelGap apart: the later one is pushed forward and the road catches up after.
+  let prevKind = null, prevZ = -Infinity;
+  const spaced = (kind, z) => {
+    const clash = prevKind && prevKind !== 'horde' && prevKind !== kind && (kind === 'gate' || prevKind === 'gate');
+    const at = Math.max(z, prevZ + (clash ? D.gateBarrelGap : D.slotGap[0] * 0.75));
+    prevKind = kind; prevZ = at;
+    return at;
+  };
+  slots.forEach((slotZ, i) => {
+    let z = slotZ;
     if (i === 0) {
+      z = spaced('barrel', slotZ);
       addBarrel(rng.pick([-1.6, 1.6]), z, D.firstBarrelHp, { kind: 'soldiers', count: 1 });
       expN += 0.7;
       return;
     }
     if (i === 1) {
       const side = level.barrels[0].x < 0 ? 1 : -1;
+      z = spaced('gate', slotZ);
       level.gates.push({ id: nextId++, side, z, value: -Math.min(60, 4 + n) });
       lastWasGate = true;
       return;
@@ -71,6 +82,7 @@ export function generateLevel(n) {
       const weapon = WEAPON_ORDER[tier];
       // From operation 30 the last pickup is the tank instead of a weapon.
       const reward = n >= TANK.fromLevel && k === weaponSlots.length - 1 ? { kind: 'tank' } : { kind: 'weapon', weapon };
+      z = spaced('barrel', slotZ);
       addBarrel(rng.pick(LANES), z, Math.max(4, Math.round(expDps() * D.weaponHpSeconds)), reward);
       if (reward.kind === 'weapon') expWeapon = weapon;
       lastWasGate = false;
@@ -81,6 +93,8 @@ export function generateLevel(n) {
     if (i < warmup) type = 'barrels';
     if (i === warmup) type = 'horde'; // an early horde right after the first barrels
     lastWasGate = type === 'gate';
+    z = spaced(type === 'barrels' ? 'barrel' : type, slotZ);
+    if (z > length - 16) return;
 
     if (type === 'barrels') {
       const xs = rng.chance(0.6) ? [rng.pick(LANES)] : [-1.8, 1.8];
