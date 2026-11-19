@@ -7,6 +7,8 @@ import { createUi } from './ui.js';
 import { createInput } from './input.js';
 import { loadSave, saveSave } from './storage.js';
 import { advanceClock } from './clock.js';
+import { createAudio } from './audio.js';
+import { createHaptics, createWakeLock } from './device.js';
 
 const params = new URLSearchParams(location.search);
 const DEBUG = params.has('debug');
@@ -19,19 +21,55 @@ const fpsEl = document.getElementById('fps');
 fpsEl.hidden = !DEBUG;
 
 const save = loadSave();
-if (params.has('level')) save.level = Math.max(1, Math.floor(Number(params.get('level'))) || 1);
 
 const view = createView(stageEl);
 const ui = createUi(document);
 const input = createInput(stageEl, { width: () => appEl.clientWidth });
 ui.setToggles(save);
 
-// Hooks filled in by sound/vibration/PWA modules.
-export const hooks = { onEvents: () => {}, onShots: () => {}, onStart: () => {}, onPause: () => {} };
+const audio = createAudio();
+const haptics = createHaptics();
+const wakeLock = createWakeLock();
+function applySettings(s) { audio.enabled = s.sound; haptics.enabled = s.vibe; }
+applySettings(save);
+
+// Event → sound and vibration.
+const FEEDBACK = {
+  barrelDestroyed: ['explode', 'medium'],
+  barrelCrash: ['explode', 'heavy'],
+  recruitJoined: ['recruit'],
+  weapon: ['weapon', 'medium'],
+  zombieKilled: ['zombieDown'],
+  soldierKilled: ['soldierDown', 'light'],
+  bossSpawn: ['bossRoar', 'heavy'],
+  bossKilled: ['explode'],
+  won: ['win', 'win'],
+  lost: ['lose', 'lose'],
+};
+const hooks = {
+  onEvents(events) {
+    for (const e of events) {
+      let fb = FEEDBACK[e.type];
+      if (e.type === 'gate') fb = e.value > 0 ? ['gateGood', 'light'] : e.value < 0 ? ['gateBad', 'heavy'] : null;
+      if (!fb) continue;
+      audio.play(fb[0]);
+      if (fb[1]) haptics.buzz(fb[1]);
+    }
+  },
+  onShots(shots, hits) {
+    audio.play('shot');
+    if (hits > 0) audio.play('hit');
+  },
+  onStart() { wakeLock.acquire(); },
+  onPause() { wakeLock.release(); },
+  onSettings: applySettings,
+};
+document.addEventListener('pointerdown', () => audio.unlock(), { capture: true });
 
 let state = 'menu';
 let game = null;
-let levelNumber = save.level;
+// ?level=N only picks the operation to play; it never overwrites saved progress.
+let levelNumber = params.has('level') ? Math.max(1, Math.floor(Number(params.get('level'))) || 1) : save.level;
 let endTimer = 0;
 let lastShots = 0, lastHits = 0;
 const clock = { acc: 0 };
@@ -66,6 +104,8 @@ function play() {
 }
 
 ui.onAction((action) => {
+  audio.unlock();
+  audio.play('click');
   switch (action) {
     case 'play': play(); break;
     case 'pause': if (state === 'playing') setState('paused'); break;
