@@ -2,6 +2,8 @@
 import { createStage } from './stage.js';
 import { buildWorld } from './world.js';
 import { createActors } from './actors.js';
+import { createProps } from './props.js';
+import { createEffects } from './effects.js';
 
 export function createView(container) {
   const stage = createStage(container);
@@ -52,7 +54,7 @@ export function createView(container) {
     actors?.sync(game, time, camera);
     for (const e of extras) {
       for (const ev of events) e.handle?.(ev);
-      e.sync?.(game, time, camera);
+      e.sync?.(game, time, camera, dt);
       e.update?.(dt, camera);
     }
     renderer.render(scene, camera);
@@ -64,7 +66,7 @@ export function createView(container) {
     resize: stage.resize,
     get fps() { return 1 / avg; },
     // Later pieces (props, effects) register here: (scene, game) => { handle?, sync?, update?, shake?, dispose }.
-    extraFactories: [],
+    extraFactories: [createProps, (scene) => createEffects(scene)],
   };
   return view;
 }
