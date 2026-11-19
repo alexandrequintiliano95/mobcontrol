@@ -137,7 +137,7 @@ export function gateFrameGeometry(width = ROAD_HALF) {
   ]);
 }
 
-export function bossGeometry() {
+export function bossGeometry({ arms = true } = {}) {
   const skin = 0x6aa84f, armor = 0x5b3d7a, spike = 0xd9d2c5;
   return mergeColored([
     part(box(0.18, 0.36, 0.2), 0x2e2a3a, -0.13, 0.18, 0),
@@ -147,8 +147,7 @@ export function bossGeometry() {
     part(ball(0.2, 8, 6), skin, 0, 1.0, -0.06),
     part(box(0.07, 0.05, 0.03), 0xffe14d, -0.07, 1.03, -0.24),
     part(box(0.07, 0.05, 0.03), 0xffe14d, 0.07, 1.03, -0.24),
-    part(box(0.18, 0.42, 0.18), skin, -0.4, 0.6, -0.12, 0.5),
-    part(box(0.18, 0.42, 0.18), skin, 0.4, 0.6, -0.12, 0.5),
+    ...(arms ? [part(box(0.18, 0.42, 0.18), skin, -0.4, 0.6, -0.12, 0.5), part(box(0.18, 0.42, 0.18), skin, 0.4, 0.6, -0.12, 0.5)] : []),
     part(new ConeGeometry(0.06, 0.2, 5), spike, -0.2, 0.92, 0.05),
     part(new ConeGeometry(0.06, 0.2, 5), spike, 0.2, 0.92, 0.05),
     part(new ConeGeometry(0.05, 0.16, 5), spike, 0, 1.22, 0),
@@ -236,5 +235,15 @@ export function rubbleGeometry() {
     part(box(0.7, 0.3, 0.5), 0x8c837a, 0, 0.15, 0, 0.2, 0.4, 0.1),
     part(box(0.5, 0.25, 0.4), 0x6f6760, 0.4, 0.12, 0.3, 0, 1, 0.2),
     part(box(0.4, 0.2, 0.6), 0xa39a90, -0.35, 0.1, 0.25, 0.1, 0.3, 0),
+  ]);
+}
+
+export function bossArmGeometry() {
+  // Pivot at the shoulder; the arm hangs down to a big fist (rotate on x to punch forward).
+  const skin = 0x6aa84f;
+  return mergeColored([
+    part(box(0.18, 0.4, 0.18), skin, 0, -0.2, 0),
+    part(box(0.26, 0.22, 0.26), 0x4f7f3a, 0, -0.45, 0),
+    part(box(0.27, 0.05, 0.27), 0xd9d2c5, 0, -0.36, 0),
   ]);
 }

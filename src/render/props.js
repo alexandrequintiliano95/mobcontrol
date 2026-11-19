@@ -1,7 +1,8 @@
 // Barrels (with riders or a weapon on top), gates and the boss.
 import { Group, Mesh, MeshLambertMaterial, MeshBasicMaterial, PlaneGeometry, DoubleSide } from 'three';
 import { ROAD_HALF, BARREL_RADIUS } from '../config.js';
-import { barrelGeometry, soldierGeometry, weaponGeometry, gateFrameGeometry, bossGeometry } from './geometry.js';
+import { barrelGeometry, soldierGeometry, weaponGeometry, gateFrameGeometry, bossGeometry, bossArmGeometry } from './geometry.js';
+import { BOSS } from '../config.js';
 import { createLabel } from './labels.js';
 
 const RED = 0xe5484d, BLUE = 0x3b82f6, GRAY = 0x9aa0a6;
@@ -73,7 +74,16 @@ export function createProps(scene, game) {
   const look = BOSS_LOOK[game.boss.kind] ?? BOSS_LOOK.brute;
   const bossMaterial = new MeshLambertMaterial({ vertexColors: true });
   bossMaterial.color.setRGB(look[0], look[1], look[2]);
-  const boss = new Mesh(bossGeometry(), bossMaterial);
+  const boss = new Group();
+  const bossBody = new Mesh(bossGeometry({ arms: false }), bossMaterial);
+  const armGeo = bossArmGeometry();
+  const arms = [-1, 1].map((side) => {
+    const arm = new Mesh(armGeo, bossMaterial);
+    arm.position.set(side * 0.4, 0.8, -0.05);
+    boss.add(arm);
+    return arm;
+  });
+  boss.add(bossBody);
   boss.scale.setScalar(look[3]);
   boss.rotation.y = Math.PI;
   root.add(boss);
@@ -107,9 +117,24 @@ export function createProps(scene, game) {
     const bo = g.boss;
     boss.visible = bo.alive && visibleZ(g, bo.z);
     if (boss.visible) {
-      const step = bo.active ? Math.sin(time * 4) : 0;
-      boss.position.set(bo.x, Math.abs(step) * 0.25, -bo.z);
-      boss.rotation.z = step * 0.06;
+      if (bo.engaged) {
+        // Punching: arms alternate, one blow per bite, body lunges forward on each hit.
+        const t = (bo.biteTimer * BOSS.killRate) % 1;
+        const hit = Math.sin(t * Math.PI);
+        const left = Math.floor(time * BOSS.killRate) % 2 === 0;
+        arms[0].rotation.set(left ? -0.3 - hit * 2.2 : -0.6, 0, left ? 0.2 : 0);
+        arms[1].rotation.set(left ? -0.6 : -0.3 - hit * 2.2, 0, left ? 0 : -0.2);
+        bossBody.rotation.x = -hit * 0.25;
+        boss.position.set(bo.x, Math.abs(Math.sin(time * 9)) * 0.15, -bo.z + hit * 0.4);
+        boss.rotation.z = 0;
+      } else {
+        const step = bo.active ? Math.sin(time * 4) : 0;
+        arms[0].rotation.set(-0.5 + step * 0.5, 0, 0.1);
+        arms[1].rotation.set(-0.5 - step * 0.5, 0, -0.1);
+        bossBody.rotation.x = 0;
+        boss.position.set(bo.x, Math.abs(step) * 0.25, -bo.z);
+        boss.rotation.z = step * 0.06;
+      }
     }
   }
 
@@ -121,7 +146,8 @@ export function createProps(scene, game) {
       for (const gt of gates) gt.panelMat.dispose();
       shared.barrel.dispose(); shared.rider.dispose(); shared.frame.dispose(); shared.panel.dispose();
       for (const w of Object.values(shared.weapons)) w.dispose();
-      boss.geometry.dispose();
+      bossBody.geometry.dispose();
+      armGeo.dispose();
       bossMaterial.dispose();
       material.dispose();
     },

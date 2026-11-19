@@ -95,7 +95,16 @@ export function createEffects(scene) {
         burst(e.x, e.z, 30, GOO, 1.4, 1.5);
         break;
       case 'soldierKilled':
-        burst(e.x, e.z, 5, [0x2f6fde, 0x1d3f7a, 0xffffff], 0.6);
+        if (e.cause === 'boss') {
+          // Punch impact: soldier flies off with dust and a shock ring.
+          burst(e.x, e.z, 16, [0x2f6fde, 0x1d3f7a, 0xffffff, 0xc9b49a], 1.3, 0.8);
+          blast(e.x, e.z, 0.9);
+          if (rings.length >= CAP.rings) rings.shift();
+          rings.push({ x: e.x, z: -e.z, life: 0.5 });
+          fx.shake = Math.max(fx.shake, 0.22);
+        } else {
+          burst(e.x, e.z, 5, [0x2f6fde, 0x1d3f7a, 0xffffff], 0.6);
+        }
         break;
       case 'recruitJoined':
         if (rings.length >= CAP.rings) rings.shift();
