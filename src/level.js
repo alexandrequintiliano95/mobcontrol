@@ -18,10 +18,13 @@ const LANES = [-LANE, 0, LANE];
 const ZOMBIE_X = ROAD_HALF - 0.35;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-export function generateLevel(n) {
+// `attempt` only changes which weapons show up (a new draw on every try). The road, hordes and barrels are always
+// tuned for the default draw (attempt 0), so a lucky or unlucky draw makes that try easier or harder.
+export function generateLevel(n, attempt = 0) {
   const D = DIFFICULTY;
   const rng = createRng(n * 9973 + 17);
   const weaponRng = createRng(n * 7919 + 101); // separate stream so weapon picks do not shift the layout
+  const drawRng = attempt ? createRng(n * 7919 + 101 + attempt * 104729) : weaponRng;
   const length = D.baseLength + D.lengthPerLevel * Math.min(n - 1, D.maxLengthSteps);
   // From operation 9 the squad starts bigger, so the opening is not a death trap.
   const startSoldiers = Math.min(8, 1 + Math.floor(Math.max(0, n - 10) / 4));
@@ -41,7 +44,7 @@ export function generateLevel(n) {
 
   // Low operations get a longer barrel warm-up; from 20 on the opening is short (as before).
   const warmup = n >= 20 ? 2 : D.warmupSlots;
-  let expN = startSoldiers, expWeapon = 'rifle', prevTier = 1;
+  let expN = startSoldiers, expWeapon = 'rifle', prevTier = 1, drawTier = 1, drawWeapon = 'rifle';
   const expDps = () => expN * WEAPONS[expWeapon].damage * WEAPONS[expWeapon].rate * D.accuracy;
   // Barrels never get absurdly tough (big squads make the expected-dps estimate overshoot late in the game).
   const maxBarrelHp = Math.min(700, 310 + 15 * n);
@@ -98,8 +101,12 @@ export function generateLevel(n) {
       const tier = weaponRng.int(minTier, maxTier);
       prevTier = tier;
       const weapon = WEAPON_ORDER[tier];
+      // This try's own draw, with the same rules.
+      if (drawRng !== weaponRng) drawTier = drawRng.int(Math.min(maxTier, Math.max(1, maxTier - 2, drawTier)), maxTier);
+      else drawTier = tier;
       // From operation 30 the last pickup is the tank instead of a weapon.
-      const reward = n >= TANK.fromLevel && k === weaponSlots.length - 1 ? { kind: 'tank' } : { kind: 'weapon', weapon };
+      const reward = n >= TANK.fromLevel && k === weaponSlots.length - 1 ? { kind: 'tank' } : { kind: 'weapon', weapon: WEAPON_ORDER[drawTier] };
+      if (reward.kind === 'weapon') drawWeapon = reward.weapon;
       z = spaced('barrel', slotZ);
       addBarrel(rng.pick(LANES), z, Math.max(4, Math.round(expDps() * D.weaponHpSeconds)), reward);
       if (reward.kind === 'weapon') expWeapon = weapon;
@@ -167,7 +174,7 @@ export function generateLevel(n) {
   level.boss.kind = BOSS_KINDS[Math.floor((n - 1) / 5) % BOSS_KINDS.length];
   // Between 300 and 390 per operation (the expected-dps estimate spikes when a strong weapon shows up), and never more
   // (from operation 30) than a squad of the expected size can deal with the operation's best weapon while the boss punches it down.
-  const w = WEAPONS[expWeapon], squadRef = Math.min(200, 40 + 1.5 * n);
+  const w = WEAPONS[drawWeapon], squadRef = Math.min(200, 40 + 1.5 * n);
   const beatable = D.bossBeatable * w.damage * w.rate * squadRef ** 2 / (2 * BOSS.killRate);
   const hp = clamp(expDps() * (D.bossSeconds + n), 300 * n, 390 * n);
   level.boss.hp = Math.round(n >= 30 ? Math.min(hp, beatable) : hp);

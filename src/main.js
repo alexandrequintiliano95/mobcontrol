@@ -100,7 +100,8 @@ let countdown = 0; // seconds left before the run starts (3, 2, 1, VAI!)
 let shownCount = null;
 
 function newGame() {
-  game = createGame(generateLevel(levelNumber));
+  // Every try draws new weapons (the demo keeps the default draw).
+  game = createGame(generateLevel(levelNumber, DEMO ? 0 : 1 + Math.floor(Math.random() * 1e6)));
   const extra = Math.floor(Number(params.get('soldiers')) || 0) - 1;
   if (extra > 0) addSoldiers(game, extra);
   input.reset(0);

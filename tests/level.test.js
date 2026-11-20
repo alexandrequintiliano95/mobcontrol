@@ -95,3 +95,11 @@ test('late bosses stay beatable for a squad of the expected size with the operat
     assert.ok(l.boss.hp <= w.damage * w.rate * squad ** 2 / (2 * BOSS.killRate), `op ${n}: ${l.boss.hp}`);
   }
 });
+test('each attempt can draw different weapons, while the road layout stays the same', () => {
+  const weapons = (l) => l.barrels.filter((b) => b.reward.kind === 'weapon').map((b) => b.reward.weapon).join();
+  const layout = (l) => JSON.stringify([l.barrels.map((b) => [b.x, b.z, b.reward.kind]), l.gates, l.zombies]);
+  assert.deepEqual(generateLevel(52, 0), generateLevel(52));
+  const tries = Array.from({ length: 12 }, (_, i) => generateLevel(52, i + 1));
+  assert.ok(new Set(tries.map(weapons)).size >= 2);
+  for (const l of tries) assert.equal(layout(l), layout(generateLevel(52)));
+});
