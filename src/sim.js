@@ -218,7 +218,15 @@ function moveSquad(game, dt, input) {
       game.boss.active = true;
       // The boss always takes a few seconds, however big the squad got.
       const w = WEAPONS[squad.weapon];
-      const minHp = game.soldiers.length * w.damage * w.rate * BOSS.minSeconds;
+      let minHp = game.soldiers.length * w.damage * w.rate * BOSS.minSeconds;
+      if (game.level.number >= BOSS_LATE.fromLevel) {
+        // Late operations: the boss lasts its walk-in plus the time it needs to punch down `lossShare` of the squad,
+        // so a huge squad still pays for the fight (it still wins more easily than a small one).
+        const B = bossSpec(game), n = game.soldiers.length;
+        const walkIn = BOSS_GAP / (game.boss.kind === 'charger' ? B.chargerSpeed : B.speed);
+        // `efficiency`: not every bullet lands on the boss and the squad shrinks while it punches.
+        minHp = Math.max(minHp, B.efficiency * n * w.damage * w.rate * (walkIn + (B.lossShare * n) / B.killRate));
+      }
       if (game.boss.hp < minHp) game.boss.hp = game.boss.maxHp = Math.round(minHp);
       game.events.push({ type: 'bossSpawn' });
     }

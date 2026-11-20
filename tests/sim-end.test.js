@@ -82,3 +82,12 @@ test('during the boss fight the squad can step back and forth, within limits', (
   run(g, 3, { targetX: 0, targetDz: 50 });
   assert.equal(g.squad.z, 5 + BOSS.advance);
 });
+test('from operation 50 a huge squad still loses a good share of soldiers to the boss', () => {
+  for (const weapon of ['ak47', 'minigun']) {
+    const g = createGame(emptyLevel({ number: 62, length: 10, boss: { hp: 100, kind: 'brute' } }));
+    addSoldiers(g, 298); g.squad.weapon = weapon;
+    run(g, 90);
+    assert.equal(g.phase, 'won', weapon);
+    assert.ok(g.soldiers.length < 299 * 0.65, `${weapon}: sobraram ${g.soldiers.length}`);
+  }
+});
