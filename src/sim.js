@@ -321,7 +321,7 @@ function hitTargets(game, b, targets) {
       game.hits++;
       // Big squads fire many more shots, so each shot counts less (full point up to GATE_FULL_SQUAD soldiers).
       const scale = Math.min(1, GATE_FULL_SQUAD / Math.max(1, game.soldiers.length));
-      t.ref.value = Math.min(GATE_MAX, t.ref.value + b.damage * GATE_PER_DAMAGE * scale);
+      t.ref.value = Math.max(t.ref.value, Math.min(GATE_MAX, t.ref.value + b.damage * GATE_PER_DAMAGE * scale)); // shots raise a gate up to GATE_MAX, never lower it
       return true;
     }
     if (!t.ref.alive) continue;

@@ -28,6 +28,11 @@ test('a gate never goes above GATE_MAX', () => {
   addSoldiers(g, 59); run(g, 4, { targetX: -3 });
   assert.equal(eventsOf(g, 'gate')[0].value, GATE_MAX);
 });
+test('shooting a blue gate that already starts above GATE_MAX never lowers it', () => {
+  const g = createGame(emptyLevel({ gates: [{ id: 1, side: -1, z: 25, value: GATE_MAX + 6 }] }));
+  addSoldiers(g, 59); run(g, 4, { targetX: -3 });
+  assert.equal(eventsOf(g, 'gate')[0].value, GATE_MAX + 6);
+});
 test('zombies walk toward the squad from the very start, wherever they are', () => {
   const g = createGame(emptyLevel({ zombies: [zombie(1, 3, 200, 'walker', 1e9)] }));
   run(g, 1);
