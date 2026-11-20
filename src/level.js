@@ -8,9 +8,9 @@ export const DIFFICULTY = {
   firstSlotZ: 18, slotGap: [11, 16], firstBarrelHp: 4, warmupSlots: 5,
   weaponSlots: [0.45, 0.75], weaponHpSeconds: 3,
   weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
-  accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, lateFrom: 50, lateExpGain: 0.3, baitChance: 0.15, baitHp: 2.5,
+  accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, lateFrom: 50, lateExpGain: 0.3, lateHorde: 0.55, lateBossPerLevel: 100, lateWeaponHp: 0.6, baitChance: 0.15, baitHp: 2.5,
   blueGateChance: 0.3, gateBarrelGap: 17, gateHordeGap: 15, hordeGateGap: 10, hordeSeconds: 3.0, maxHorde: 45, maxZombies: 1500,
-  zombieHpPerLevel: 0.2, bossSeconds: 30, bossBeatable: 0.8,
+  zombieHpPerLevel: 0.2, bossSeconds: 30,
 };
 
 const LANE = ROAD_HALF / 2;
@@ -110,7 +110,7 @@ export function generateLevel(n, attempt = 0) {
       const reward = n >= TANK.fromLevel && k === weaponSlots.length - 1 ? { kind: 'tank' } : { kind: 'weapon', weapon: WEAPON_ORDER[drawTier] };
       if (reward.kind === 'weapon') drawWeapon = reward.weapon;
       z = spaced('barrel', slotZ);
-      addBarrel(rng.pick(LANES), z, Math.max(4, Math.round(expDps() * D.weaponHpSeconds)), reward);
+      addBarrel(rng.pick(LANES), z, Math.max(4, Math.round(expDps() * D.weaponHpSeconds * (n >= D.lateFrom ? D.lateWeaponHp : 1))), reward);
       if (reward.kind === 'weapon') expWeapon = weapon;
       lastWasGate = false;
       return;
@@ -135,7 +135,7 @@ export function generateLevel(n, attempt = 0) {
     } else if (type === 'gate') {
       addGate(z);
     } else {
-      let budget = expDps() * D.hordeSeconds * (i === warmup ? 0.45 : 0.8 + 0.1 * Math.min(n, 12)) * (i <= warmup + 3 ? 0.8 : 1);
+      let budget = expDps() * D.hordeSeconds * (n >= D.lateFrom ? D.lateHorde : 1) * (i === warmup ? 0.45 : 0.8 + 0.1 * Math.min(n, 12)) * (i <= warmup + 3 ? 0.8 : 1);
       const early = i <= warmup + 3; // opening hordes keep base hp
       // Zombie HP grows fast until operation 16, then slowly (late levels get harder through numbers, not bullet sponges).
       const hpScale = early ? 1 : 1 + D.zombieHpPerLevel * Math.min(n - 1, 15) + 0.05 * Math.max(0, n - 16);
@@ -177,11 +177,9 @@ export function generateLevel(n, attempt = 0) {
   if (!late) {
     level.boss.hp = Math.max(300 * n, Math.round(expDps() * (D.bossSeconds + n)));
   } else {
-    // Between 300 and 390 per operation (the expected-dps estimate spikes when a strong weapon shows up), and never more
-    // than a squad of the expected size can deal with the weapon drawn while the boss punches it down.
-    const w = WEAPONS[drawWeapon], squadRef = Math.min(200, 40 + 1.5 * n);
-    const beatable = D.bossBeatable * w.damage * w.rate * squadRef ** 2 / (2 * 8); // 8 punches/s reference
-    level.boss.hp = Math.round(Math.min(clamp(expDps() * (D.bossSeconds + n), 300 * n, 390 * n), beatable));
+    // From operation 50 the boss is sized at spawn by the squad that actually reaches it (see BOSS_LATE in sim.js);
+    // this is only the floor for a small squad.
+    level.boss.hp = D.lateBossPerLevel * n;
   }
   return level;
 }
