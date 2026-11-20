@@ -10,7 +10,7 @@ export const DIFFICULTY = {
   weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
   accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.3, baitChance: 0.15, baitHp: 2.5,
   blueGateChance: 0.3, gateBarrelGap: 17, gateHordeGap: 15, hordeGateGap: 10, hordeSeconds: 3.0, maxHorde: 45, maxZombies: 1500,
-  zombieHpPerLevel: 0.2, bossSeconds: 30, bossBeatable: 0.7,
+  zombieHpPerLevel: 0.2, bossSeconds: 30, bossBeatable: 0.8,
 };
 
 const LANE = ROAD_HALF / 2;

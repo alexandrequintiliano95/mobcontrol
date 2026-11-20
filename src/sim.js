@@ -100,15 +100,15 @@ function moveBoss(game, dt) {
     if (boss.z > game.squad.z) return;
     // Standing on the squad center but nobody in reach: step toward the nearest soldier.
     const s0 = game.soldiers[0];
-    if (s0) boss.x += clamp(s0.x - boss.x, -1, 1) * 2 * dt;
+    if (s0) boss.x += clamp(s0.x - boss.x, -1, 1) * BOSS.chase * dt;
     return;
   }
   // Engaged: stand in the squad and punch the nearest soldier at a steady rate, shuffling toward them.
   let near = null, best = Infinity;
   for (const s of game.soldiers) { const d = Math.hypot(s.x - boss.x, s.z - boss.z); if (d < best) { best = d; near = s; } }
   if (near && best > BOSS.radius) {
-    boss.x += clamp(near.x - boss.x, -1, 1) * 2 * dt;
-    boss.z = Math.max(game.squad.z - 6, boss.z + clamp(near.z - boss.z, -1, 1) * 2 * dt);
+    boss.x += clamp(near.x - boss.x, -1, 1) * BOSS.chase * dt;
+    boss.z = Math.max(game.squad.z - BOSS.retreat - 6, boss.z + clamp(near.z - boss.z, -1, 1) * BOSS.chase * dt);
   }
   // Punches only kill a soldier within reach of the fist; out of reach, the next punch waits.
   const every = 1 / BOSS.killRate;

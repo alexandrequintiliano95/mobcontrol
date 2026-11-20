@@ -72,6 +72,7 @@ test('the boss only kills soldiers its punch can reach', () => {
 });
 test('during the boss fight the squad can step back and forth, within limits', () => {
   const g = createGame(emptyLevel({ length: 5, boss: { hp: 1e9 } }));
+  g.boss.z = 1e6; // keep the boss away, only the movement matters here
   run(g, 0.5, { targetX: 0, targetDz: -50 });
   assert.ok(g.squad.z <= 5, 'antes do chefão não recua');
   run(g, 1, { targetX: 0 });
