@@ -50,6 +50,8 @@ const FEEDBACK = {
   tankJoined: ['weapon', 'heavy'],
   newPickup: ['weapon', 'medium'],
   killReward: ['recruit', 'light'],
+  tankShot: ['cannon'],
+  tankBlast: ['explode'],
   tankDestroyed: ['explode', 'heavy'],
   shieldBroken: ['hit'],
   bossSummon: ['bossRoar'],

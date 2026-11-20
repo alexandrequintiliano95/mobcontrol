@@ -252,7 +252,8 @@ function moveTank(game, dt) {
   if (t.cooldown <= 0) {
     t.cooldown += 1 / TANK.rate;
     game.tankShots++;
-    game.bullets.push({ x: t.x, z: t.z + 1, prevZ: t.z + 1, damage: TANK.damage, pierce: 1, splash: TANK.splash, travelled: 0, hitIds: [] });
+    game.bullets.push({ x: t.x, z: t.z + 1, prevZ: t.z + 1, damage: TANK.damage, pierce: 1, splash: TANK.splash, travelled: 0, hitIds: [], tank: true });
+    game.events.push({ type: 'tankShot', x: t.x, z: t.z + 1 });
   }
 }
 
@@ -339,6 +340,7 @@ function hitTargets(game, b, targets) {
     game.hits++;
     b.hitIds.push(t.ref.id);
     if (b.splash > 0) {
+      if (b.tank) game.events.push({ type: 'tankBlast', x: b.x, z: key, r: b.splash });
       if (t.kind !== 'zombie') damage(game, t, b.damage);
       for (const z of game.zombies) {
         if (z.alive && z.active && Math.hypot(z.x - b.x, z.z - key) <= b.splash) damage(game, { kind: 'zombie', ref: z }, b.damage);

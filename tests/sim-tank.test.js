@@ -41,3 +41,11 @@ test('operation 30+ offers the tank barrel', () => {
   assert.ok(generateLevel(30).barrels.some((b) => b.reward.kind === 'tank'));
   assert.ok(!generateLevel(25).barrels.some((b) => b.reward.kind === 'tank'));
 });
+test('each tank shot and each shell explosion is announced for the effects', () => {
+  const zombies = Array.from({ length: 6 }, (_, i) => ({ id: 100 + i, kind: 'brute', x: 0, z: 30 + i * 3, hp: 400 }));
+  const g = createGame(emptyLevel({ barrels: [tankBarrel(1, 4)], zombies }));
+  addSoldiers(g, 19); run(g, 5);
+  assert.ok(eventsOf(g, 'tankShot').length >= 3);
+  assert.ok(g.bullets.every((b) => b.tank === undefined || b.tank === true));
+  assert.ok(eventsOf(g, 'tankBlast').length >= 1);
+});

@@ -93,6 +93,17 @@ export function createEffects(scene) {
         if (rings.length >= CAP.rings) rings.shift();
         rings.push({ x: e.x, z: -e.z, life: 0.5 });
         break;
+      case 'tankShot':
+        // Muzzle flash and smoke at the cannon mouth.
+        burst(e.x, e.z + 0.8, 14, [0xfff1a8, 0xffb13b, 0xff7a1a], 0.7, 0.6);
+        burst(e.x, e.z + 0.6, 6, [0x8a8a8a, 0x5c5c5c], 0.4, 0.4);
+        fx.shake = Math.max(fx.shake, 0.12);
+        break;
+      case 'tankBlast':
+        burst(e.x, e.z, 36, FIRE, 1.3);
+        blast(e.x, e.z, e.r ?? 2.6);
+        fx.shake = Math.max(fx.shake, 0.25);
+        break;
       case 'tankDestroyed':
         burst(e.x, e.z, 80, FIRE, 1.8, 1);
         blast(e.x, e.z, 3);

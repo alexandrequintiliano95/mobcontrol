@@ -36,6 +36,8 @@ export function createActors(scene) {
   const zombieLegs = instanced(zombieLegGeometry(), lambert, CAP.zombies * 2);
   const shields = instanced(new BoxGeometry(0.7, 0.85, 0.08), new MeshLambertMaterial({ color: 0x9fb4c7 }), CAP.zombies);
   const bullets = instanced(new BoxGeometry(0.09, 0.09, 0.9), new MeshBasicMaterial({ color: 0xffe27a, transparent: true, opacity: 0.95, blending: AdditiveBlending, depthWrite: false }), CAP.bullets);
+  // Tank shells: a big glowing round so the cannon reads clearly.
+  const shells = instanced(new SphereGeometry(0.38, 10, 8), new MeshBasicMaterial({ color: 0xff8a2a, transparent: true, opacity: 0.95, blending: AdditiveBlending, depthWrite: false }), 64);
   const flashes = instanced(new SphereGeometry(0.13, 6, 4), new MeshBasicMaterial({ color: 0xffc94d, transparent: true, opacity: 0.9, blending: AdditiveBlending, depthWrite: false }), CAP.soldiers);
   const shadowGeo = new CircleGeometry(0.3, 12).rotateX(-Math.PI / 2);
   const shadows = instanced(shadowGeo, new MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false }), CAP.shadows);
@@ -44,7 +46,7 @@ export function createActors(scene) {
   barBack.renderOrder = barFill.renderOrder = 5;
   soldierBodies.setColorAt(0, WHITE);
   zombieBodies.setColorAt(0, WHITE);
-  const all = [soldierBodies, soldierLegs, zombieBodies, zombieLegs, shields, bullets, flashes, shadows, barBack, barFill];
+  const all = [soldierBodies, soldierLegs, zombieBodies, zombieLegs, shields, bullets, shells, flashes, shadows, barBack, barFill];
   for (const m of all) scene.add(m);
 
   const d = new Object3D();
@@ -147,14 +149,24 @@ export function createActors(scene) {
     shields.count = sz;
     barBack.count = barFill.count = b;
 
-    let n = 0;
+    let n = 0, sn = 0;
     for (const bl of game.bullets) {
+      if (bl.tank) {
+        if (sn >= 64) continue;
+        d.position.set(bl.x, 0.95, -bl.z);
+        d.scale.set(1, 1, 2.2); // stretched like a tracer
+        d.updateMatrix();
+        shells.setMatrixAt(sn++, d.matrix);
+        d.scale.set(1, 1, 1);
+        continue;
+      }
       if (n >= CAP.bullets) break;
       d.position.set(bl.x, 0.62, -bl.z);
       d.updateMatrix();
       bullets.setMatrixAt(n++, d.matrix);
     }
     bullets.count = n;
+    shells.count = sn;
     flashes.count = f;
     shadows.count = sh;
 
