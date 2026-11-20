@@ -175,7 +175,7 @@ export function generateLevel(n, attempt = 0) {
   // Between 300 and 390 per operation (the expected-dps estimate spikes when a strong weapon shows up), and never more
   // (from operation 30) than a squad of the expected size can deal with the operation's best weapon while the boss punches it down.
   const w = WEAPONS[drawWeapon], squadRef = Math.min(200, 40 + 1.5 * n);
-  const beatable = D.bossBeatable * w.damage * w.rate * squadRef ** 2 / (2 * BOSS.killRate);
+  const beatable = D.bossBeatable * w.damage * w.rate * squadRef ** 2 / (2 * 8); // 8 punches/s reference: a harder punch must not shrink the boss
   const hp = clamp(expDps() * (D.bossSeconds + n), 300 * n, 390 * n);
   level.boss.hp = Math.round(n >= 30 ? Math.min(hp, beatable) : hp);
   return level;

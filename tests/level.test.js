@@ -92,7 +92,7 @@ test('late bosses stay beatable for a squad of the expected size with the operat
   for (let n = 30; n <= 100; n++) {
     const l = generateLevel(n), w = WEAPONS[l.barrels.filter((b) => b.reward.kind === 'weapon').at(-1).reward.weapon];
     const squad = Math.min(200, 40 + 1.5 * n);
-    assert.ok(l.boss.hp <= w.damage * w.rate * squad ** 2 / (2 * BOSS.killRate), `op ${n}: ${l.boss.hp}`);
+    assert.ok(l.boss.hp <= w.damage * w.rate * squad ** 2 / (2 * 8), `op ${n}: ${l.boss.hp}`);
   }
 });
 test('each attempt can draw different weapons, while the road layout stays the same', () => {
