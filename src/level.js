@@ -1,6 +1,6 @@
 // Procedural level ("Operação N") generator. Deterministic per level number.
 import { createRng } from './rng.js';
-import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS, BOSS_KINDS, TANK, SQUAD_SPEED, BOSS_GAP } from './config.js';
+import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS, BOSS_KINDS, TANK, SQUAD_SPEED, BOSS_GAP, BOSS } from './config.js';
 
 // Difficulty knobs, grouped for tuning.
 export const DIFFICULTY = {
@@ -10,7 +10,7 @@ export const DIFFICULTY = {
   weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
   accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, baitChance: 0.15, baitHp: 2.5,
   blueGateChance: 0.3, gateBarrelGap: 17, gateHordeGap: 15, hordeGateGap: 10, hordeSeconds: 3.0, maxHorde: 45, maxZombies: 1500,
-  zombieHpPerLevel: 0.2, bossSeconds: 30,
+  zombieHpPerLevel: 0.2, bossSeconds: 30, bossBeatable: 0.7,
 };
 
 const LANE = ROAD_HALF / 2;
@@ -165,6 +165,11 @@ export function generateLevel(n) {
   addGate(spaced('gate', length - 16), true);
 
   level.boss.kind = BOSS_KINDS[Math.floor((n - 1) / 5) % BOSS_KINDS.length];
-  level.boss.hp = Math.max(300 * n, Math.round(expDps() * (D.bossSeconds + n)));
+  // Between 300 and 390 per operation (the expected-dps estimate spikes when a strong weapon shows up), and never more
+  // (from operation 30) than a squad of the expected size can deal with the operation's best weapon while the boss punches it down.
+  const w = WEAPONS[expWeapon], squadRef = Math.min(200, 60 + 2 * n);
+  const beatable = D.bossBeatable * w.damage * w.rate * squadRef ** 2 / (2 * BOSS.killRate);
+  const hp = clamp(expDps() * (D.bossSeconds + n), 300 * n, 390 * n);
+  level.boss.hp = Math.round(n >= 30 ? Math.min(hp, beatable) : hp);
   return level;
 }

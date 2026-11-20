@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateLevel } from '../src/level.js';
-import { ROAD_HALF, BARREL_RADIUS, WEAPON_ORDER, SQUAD_SPEED, ZOMBIES } from '../src/config.js';
+import { ROAD_HALF, BARREL_RADIUS, WEAPON_ORDER, SQUAD_SPEED, ZOMBIES, WEAPONS, BOSS } from '../src/config.js';
 
 const zombieHp = (l) => l.zombies.reduce((s, z) => s + z.hp, 0);
 test('the same operation number always builds the same road', () => assert.deepEqual(generateLevel(4), generateLevel(4)));
@@ -86,5 +86,12 @@ test('zombies never meet the squad right after a gate', () => {
       const meet = zb.z * SQUAD_SPEED / (SQUAD_SPEED + ZOMBIES[zb.kind].speed);
       for (const g of l.gates) assert.ok(meet < g.z - 8 || meet > g.z + 14, `op ${n}: zumbi encontra em ${meet.toFixed(1)}, portão em ${g.z.toFixed(1)}`);
     }
+  }
+});
+test('late bosses stay beatable for a squad of the expected size with the operation weapon', () => {
+  for (let n = 30; n <= 100; n++) {
+    const l = generateLevel(n), w = WEAPONS[l.barrels.filter((b) => b.reward.kind === 'weapon').at(-1).reward.weapon];
+    const squad = Math.min(200, 60 + 2 * n);
+    assert.ok(l.boss.hp <= w.damage * w.rate * squad ** 2 / (2 * BOSS.killRate), `op ${n}: ${l.boss.hp}`);
   }
 });
