@@ -8,7 +8,7 @@ export const DIFFICULTY = {
   firstSlotZ: 18, slotGap: [11, 16], firstBarrelHp: 4, warmupSlots: 5,
   weaponSlots: [0.45, 0.75], weaponHpSeconds: 3,
   weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
-  accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, baitChance: 0.15, baitHp: 2.5,
+  accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.3, baitChance: 0.15, baitHp: 2.5,
   blueGateChance: 0.3, gateBarrelGap: 17, gateHordeGap: 15, hordeGateGap: 10, hordeSeconds: 3.0, maxHorde: 45, maxZombies: 1500,
   zombieHpPerLevel: 0.2, bossSeconds: 30, bossBeatable: 0.7,
 };
@@ -167,7 +167,7 @@ export function generateLevel(n) {
   level.boss.kind = BOSS_KINDS[Math.floor((n - 1) / 5) % BOSS_KINDS.length];
   // Between 300 and 390 per operation (the expected-dps estimate spikes when a strong weapon shows up), and never more
   // (from operation 30) than a squad of the expected size can deal with the operation's best weapon while the boss punches it down.
-  const w = WEAPONS[expWeapon], squadRef = Math.min(200, 60 + 2 * n);
+  const w = WEAPONS[expWeapon], squadRef = Math.min(200, 40 + 1.5 * n);
   const beatable = D.bossBeatable * w.damage * w.rate * squadRef ** 2 / (2 * BOSS.killRate);
   const hp = clamp(expDps() * (D.bossSeconds + n), 300 * n, 390 * n);
   level.boss.hp = Math.round(n >= 30 ? Math.min(hp, beatable) : hp);
