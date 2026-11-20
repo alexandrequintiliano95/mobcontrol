@@ -89,7 +89,7 @@ test('zombies never meet the squad right after a gate', () => {
   }
 });
 test('late bosses stay beatable for a squad of the expected size with the operation weapon', () => {
-  for (let n = 30; n <= 100; n++) {
+  for (let n = 50; n <= 100; n++) {
     const l = generateLevel(n), w = WEAPONS[l.barrels.filter((b) => b.reward.kind === 'weapon').at(-1).reward.weapon];
     const squad = Math.min(200, 40 + 1.5 * n);
     assert.ok(l.boss.hp <= w.damage * w.rate * squad ** 2 / (2 * 8), `op ${n}: ${l.boss.hp}`);

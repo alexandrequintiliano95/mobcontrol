@@ -44,4 +44,6 @@ export const ZOMBIES = {
 };
 export const BOSS_KINDS = ['brute', 'summoner', 'charger'];
 
-export const BOSS = { radius: 1.6, speed: 4, killRate: 10, reach: 0.8, retreat: 10, advance: 4, stepSpeed: 9, chase: 4, minSeconds: 6, summonEvery: 2.5, summonCount: 3, chargerSpeed: 6 };
+export const BOSS = { radius: 1.6, speed: 2.4, killRate: 8, reach: 0.8, retreat: 10, advance: 4, stepSpeed: 9, chase: 2, minSeconds: 6, summonEvery: 2.5, summonCount: 3, chargerSpeed: 3.6 };
+// From operation 50 on the boss walks in faster, chases harder and punches faster.
+export const BOSS_LATE = { fromLevel: 50, speed: 4, chargerSpeed: 6, chase: 4, killRate: 10 };

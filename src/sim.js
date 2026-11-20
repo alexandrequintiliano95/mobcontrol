@@ -2,7 +2,7 @@
 import {
   ROAD_HALF, SQUAD_SPEED, STEER_SPEED, SOLDIER_RADIUS, SOLDIER_FOLLOW, MAX_SOLDIERS,
   BULLET_SPEED, BULLET_RANGE, KILL_REWARD, BARREL_RADIUS, RECRUIT_SPEED, WEAPONS, BOSS_GAP,
-  GATE_PER_DAMAGE, GATE_MAX, GATE_FULL_SQUAD, TANK, ZOMBIES, ZOMBIE_ACTIVATE_DIST, ZOMBIE_HOMING, BOSS,
+  GATE_PER_DAMAGE, GATE_MAX, GATE_FULL_SQUAD, TANK, ZOMBIES, ZOMBIE_ACTIVATE_DIST, ZOMBIE_HOMING, BOSS, BOSS_LATE,
 } from './config.js';
 import { formationOffsets, formationHalfWidth, formationRadius } from './formation.js';
 import { createRng } from './rng.js';
@@ -76,8 +76,11 @@ export function stepGame(game, dt, input) {
   checkLost(game);
 }
 
+const bossSpec = (game) => (game.level.number >= BOSS_LATE.fromLevel ? { ...BOSS, ...BOSS_LATE } : BOSS);
+
 function moveBoss(game, dt) {
   const boss = game.boss;
+  const B = bossSpec(game);
   if (!boss.active || !boss.alive || game.phase !== 'boss') return;
   const touching = game.soldiers.some((s) => Math.hypot(s.x - boss.x, s.z - boss.z) < BOSS.radius + SOLDIER_RADIUS);
   // Summoner keeps calling zombies either way.
@@ -95,23 +98,23 @@ function moveBoss(game, dt) {
   if (touching) boss.engaged = true;
   if (!boss.engaged) {
     // Walk toward the squad (never past it), drifting toward its x.
-    boss.z = Math.max(game.squad.z, boss.z - (boss.kind === 'charger' ? BOSS.chargerSpeed : BOSS.speed) * dt);
+    boss.z = Math.max(game.squad.z, boss.z - (boss.kind === 'charger' ? B.chargerSpeed : B.speed) * dt);
     boss.x += clamp(game.squad.x - boss.x, -1, 1) * 0.6 * dt;
     if (boss.z > game.squad.z) return;
     // Standing on the squad center but nobody in reach: step toward the nearest soldier.
     const s0 = game.soldiers[0];
-    if (s0) boss.x += clamp(s0.x - boss.x, -1, 1) * BOSS.chase * dt;
+    if (s0) boss.x += clamp(s0.x - boss.x, -1, 1) * B.chase * dt;
     return;
   }
   // Engaged: stand in the squad and punch the nearest soldier at a steady rate, shuffling toward them.
   let near = null, best = Infinity;
   for (const s of game.soldiers) { const d = Math.hypot(s.x - boss.x, s.z - boss.z); if (d < best) { best = d; near = s; } }
   if (near && best > BOSS.radius) {
-    boss.x += clamp(near.x - boss.x, -1, 1) * BOSS.chase * dt;
-    boss.z = Math.max(game.squad.z - BOSS.retreat - 6, boss.z + clamp(near.z - boss.z, -1, 1) * BOSS.chase * dt);
+    boss.x += clamp(near.x - boss.x, -1, 1) * B.chase * dt;
+    boss.z = Math.max(game.squad.z - BOSS.retreat - 6, boss.z + clamp(near.z - boss.z, -1, 1) * B.chase * dt);
   }
   // Punches only kill a soldier within reach of the fist; out of reach, the next punch waits.
-  const every = 1 / BOSS.killRate;
+  const every = 1 / B.killRate;
   const reach = BOSS.radius + SOLDIER_RADIUS + BOSS.reach;
   boss.biteTimer = Math.min(boss.biteTimer + dt, every * 2);
   while (boss.biteTimer >= every && game.soldiers.length) {

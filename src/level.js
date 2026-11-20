@@ -8,7 +8,7 @@ export const DIFFICULTY = {
   firstSlotZ: 18, slotGap: [11, 16], firstBarrelHp: 4, warmupSlots: 5,
   weaponSlots: [0.45, 0.75], weaponHpSeconds: 3,
   weights: { barrels: 0.4, gate: 0.15, horde: 0.45 },
-  accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.3, baitChance: 0.15, baitHp: 2.5,
+  accuracy: 0.6, barrelWindow: 2.4, rewardMin: 2, rewardMax: 4, rewardPerSoldiers: 10, expGain: 0.45, lateFrom: 50, lateExpGain: 0.3, baitChance: 0.15, baitHp: 2.5,
   blueGateChance: 0.3, gateBarrelGap: 17, gateHordeGap: 15, hordeGateGap: 10, hordeSeconds: 3.0, maxHorde: 45, maxZombies: 1500,
   zombieHpPerLevel: 0.2, bossSeconds: 30, bossBeatable: 0.8,
 };
@@ -22,6 +22,8 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 // tuned for the default draw (attempt 0), so a lucky or unlucky draw makes that try easier or harder.
 export function generateLevel(n, attempt = 0) {
   const D = DIFFICULTY;
+  // From operation 50 on: softer barrels and a boss sized to what the squad can beat (lower operations keep their tuning).
+  const late = n >= D.lateFrom;
   const rng = createRng(n * 9973 + 17);
   const weaponRng = createRng(n * 7919 + 101); // separate stream so weapon picks do not shift the layout
   const drawRng = attempt ? createRng(n * 7919 + 101 + attempt * 104729) : weaponRng;
@@ -128,7 +130,7 @@ export function generateLevel(n, attempt = 0) {
         const count = Math.min(12, rng.int(D.rewardMin, D.rewardMax) + Math.floor(expN / D.rewardPerSoldiers)) * (bait ? 2 : 1);
         const hp = Math.max(2, Math.round(expDps() * D.barrelWindow * rng.range(0.45, 0.9) * (bait ? D.baitHp : 1)));
         addBarrel(x, z, hp, { kind: 'soldiers', count });
-        expN += (count * (bait ? 0.3 : D.expGain)) / xs.length;
+        expN += (count * (bait ? 0.3 : late ? D.lateExpGain : D.expGain)) / xs.length;
       }
     } else if (type === 'gate') {
       addGate(z);
@@ -172,11 +174,14 @@ export function generateLevel(n, attempt = 0) {
   addGate(spaced('gate', length - 16), true);
 
   level.boss.kind = BOSS_KINDS[Math.floor((n - 1) / 5) % BOSS_KINDS.length];
-  // Between 300 and 390 per operation (the expected-dps estimate spikes when a strong weapon shows up), and never more
-  // (from operation 30) than a squad of the expected size can deal with the operation's best weapon while the boss punches it down.
-  const w = WEAPONS[drawWeapon], squadRef = Math.min(200, 40 + 1.5 * n);
-  const beatable = D.bossBeatable * w.damage * w.rate * squadRef ** 2 / (2 * 8); // 8 punches/s reference: a harder punch must not shrink the boss
-  const hp = clamp(expDps() * (D.bossSeconds + n), 300 * n, 390 * n);
-  level.boss.hp = Math.round(n >= 30 ? Math.min(hp, beatable) : hp);
+  if (!late) {
+    level.boss.hp = Math.max(300 * n, Math.round(expDps() * (D.bossSeconds + n)));
+  } else {
+    // Between 300 and 390 per operation (the expected-dps estimate spikes when a strong weapon shows up), and never more
+    // than a squad of the expected size can deal with the weapon drawn while the boss punches it down.
+    const w = WEAPONS[drawWeapon], squadRef = Math.min(200, 40 + 1.5 * n);
+    const beatable = D.bossBeatable * w.damage * w.rate * squadRef ** 2 / (2 * 8); // 8 punches/s reference
+    level.boss.hp = Math.round(Math.min(clamp(expDps() * (D.bossSeconds + n), 300 * n, 390 * n), beatable));
+  }
   return level;
 }
