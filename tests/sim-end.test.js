@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGame, addSoldiers, stepGame } from '../src/sim.js';
-import { BOSS, BOSS_GAP, ROAD_HALF } from '../src/config.js';
+import { BOSS, BOSS_GAP, ROAD_HALF, BOSS_LATE } from '../src/config.js';
 import { emptyLevel, run, eventsOf } from './helpers/game.js';
 
 test('reaching the end of the road stops the squad and wakes the boss', () => {
@@ -84,10 +84,18 @@ test('during the boss fight the squad can step back and forth, within limits', (
 });
 test('from operation 50 a huge squad still loses a good share of soldiers to the boss', () => {
   for (const weapon of ['ak47', 'minigun']) {
-    const g = createGame(emptyLevel({ number: 62, length: 10, boss: { hp: 100, kind: 'brute' } }));
+    const g = createGame(emptyLevel({ number: 55, length: 10, boss: { hp: 100, kind: 'brute' } }));
     addSoldiers(g, 298); g.squad.weapon = weapon;
     run(g, 90);
     assert.equal(g.phase, 'won', weapon);
     assert.ok(g.soldiers.length < 299 * 0.65, `${weapon}: sobraram ${g.soldiers.length}`);
   }
+});
+test('from operation 60 each boss punch takes two soldiers', () => {
+  const g = createGame(emptyLevel({ number: 60, length: 1, boss: { hp: 1e9 } }));
+  addSoldiers(g, 99);
+  const bites = () => eventsOf(g, 'soldierKilled').filter((e) => e.cause === 'boss').length;
+  for (let i = 0; i < 3600 && bites() === 0; i++) stepGame(g, 1 / 60, { targetX: 0 });
+  const before = bites(); run(g, 2);
+  assert.ok(Math.abs(bites() - before - 2 * 2 * BOSS_LATE.killRate) <= 2);
 });

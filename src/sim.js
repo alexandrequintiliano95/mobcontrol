@@ -2,7 +2,7 @@
 import {
   ROAD_HALF, SQUAD_SPEED, STEER_SPEED, SOLDIER_RADIUS, SOLDIER_FOLLOW, MAX_SOLDIERS,
   BULLET_SPEED, BULLET_RANGE, KILL_REWARD, BARREL_RADIUS, RECRUIT_SPEED, WEAPONS, BOSS_GAP,
-  GATE_PER_DAMAGE, GATE_MAX, GATE_FULL_SQUAD, TANK, ZOMBIES, ZOMBIE_ACTIVATE_DIST, ZOMBIE_HOMING, BOSS, BOSS_LATE,
+  GATE_PER_DAMAGE, GATE_MAX, GATE_FULL_SQUAD, TANK, ZOMBIES, ZOMBIE_ACTIVATE_DIST, ZOMBIE_HOMING, BOSS, BOSS_LATE, BOSS_HIGH,
 } from './config.js';
 import { formationOffsets, formationHalfWidth, formationRadius } from './formation.js';
 import { createRng } from './rng.js';
@@ -76,7 +76,11 @@ export function stepGame(game, dt, input) {
   checkLost(game);
 }
 
-const bossSpec = (game) => (game.level.number >= BOSS_LATE.fromLevel ? { ...BOSS, ...BOSS_LATE } : BOSS);
+const bossSpec = (game) => {
+  const n = game.level.number;
+  if (n >= BOSS_HIGH.fromLevel) return { ...BOSS, ...BOSS_LATE, ...BOSS_HIGH };
+  return n >= BOSS_LATE.fromLevel ? { ...BOSS, ...BOSS_LATE } : BOSS;
+};
 
 function moveBoss(game, dt) {
   const boss = game.boss;
@@ -123,7 +127,7 @@ function moveBoss(game, dt) {
     while (boss.biteTimer >= every && tank.alive && Math.hypot(tank.x - boss.x, tank.z - boss.z) <= reach) {
       boss.biteTimer -= every;
       game.events.push({ type: 'tankPunched', x: tank.x, z: tank.z });
-      damageTank(game, BOSS.tankPunch);
+      damageTank(game, BOSS.tankPunch * B.punch);
     }
     return;
   }
@@ -134,6 +138,13 @@ function moveBoss(game, dt) {
     if (idx < 0) break;
     boss.biteTimer -= every;
     killSoldier(game, idx, 'boss');
+    // A stronger punch (late operations) also takes the next soldier within reach.
+    for (let extra = 1; extra < B.punch; extra++) {
+      let j = -1, e2 = reach * reach;
+      game.soldiers.forEach((s, i) => { const d = (s.x - boss.x) ** 2 + (s.z - boss.z) ** 2; if (d <= e2) { e2 = d; j = i; } });
+      if (j < 0) break;
+      killSoldier(game, j, 'boss');
+    }
   }
 }
 
