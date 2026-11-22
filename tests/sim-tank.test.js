@@ -49,3 +49,27 @@ test('each tank shot and each shell explosion is announced for the effects', () 
   assert.ok(g.bullets.every((b) => b.tank === undefined || b.tank === true));
   assert.ok(eventsOf(g, 'tankBlast').length >= 1);
 });
+test('in the boss fight the boss must break the tank before it can punch soldiers', () => {
+  const g = createGame(emptyLevel({ length: 20, barrels: [tankBarrel(1, 4)], boss: { hp: 1e9 } }));
+  addSoldiers(g, 39);
+  const bossKills = () => eventsOf(g, 'soldierKilled').filter((e) => e.cause === 'boss').length;
+  let destroyedAt = -1;
+  for (let i = 0; i < 60 * 40 && g.phase !== 'lost'; i++) {
+    run(g, 1 / 60);
+    if (destroyedAt < 0 && eventsOf(g, 'tankDestroyed').length) { destroyedAt = i; assert.equal(bossKills(), 0, 'nenhum soldado antes do tanque cair'); }
+  }
+  assert.ok(destroyedAt > 0, 'o chefão destrói o tanque');
+  assert.ok(eventsOf(g, 'tankPunched').length > 0);
+  assert.ok(bossKills() > 0, 'depois do tanque, ele pega os soldados');
+});
+test('tank shells always reach the boss during the fight', () => {
+  const g = createGame(emptyLevel({ length: 20, barrels: [tankBarrel(1, 4)], boss: { hp: 1e9 } }));
+  addSoldiers(g, 39);
+  for (let i = 0; i < 60 * 40 && !g.boss.engaged; i++) run(g, 1 / 60);
+  const before = g.boss.hp; g.events.length = 0;
+  run(g, 3);
+  const blasts = eventsOf(g, 'tankBlast');
+  assert.ok(blasts.length >= 2);
+  assert.ok(blasts.every((e) => Math.abs(e.z - g.boss.z) < 4));
+  assert.ok(before - g.boss.hp >= blasts.length * TANK.bossDamage);
+});

@@ -31,7 +31,7 @@ export const WEAPONS = {
 };
 export const WEAPON_ORDER = ['rifle', 'smg', 'sniper', 'bazooka', 'ak47', 'minigun'];
 // The tank is an allied unit (one per operation), not a weapon. Zombies run faster while it is around.
-export const TANK = { hp: 25, damage: 30, rate: 1.2, splash: 2.6, radius: 0.9, zombieSpeedup: 1.6, fromLevel: 30 };
+export const TANK = { hp: 25, damage: 30, bossDamage: 90, rate: 1.2, splash: 2.6, radius: 0.9, zombieSpeedup: 1.6, fromLevel: 30 };
 
 export const ZOMBIES = {
   walker: { hp: 3, speed: 1.6, radius: 0.35, kills: 1 },
@@ -44,6 +44,6 @@ export const ZOMBIES = {
 };
 export const BOSS_KINDS = ['brute', 'summoner', 'charger'];
 
-export const BOSS = { radius: 1.6, speed: 2.4, killRate: 8, reach: 0.8, retreat: 10, advance: 4, stepSpeed: 9, chase: 2, minSeconds: 6, summonEvery: 2.5, summonCount: 3, chargerSpeed: 3.6 };
+export const BOSS = { radius: 1.6, speed: 2.4, killRate: 8, reach: 0.8, retreat: 10, advance: 4, stepSpeed: 9, chase: 2, minSeconds: 6, summonEvery: 2.5, summonCount: 3, chargerSpeed: 3.6, tankPunch: 0.6 };
 // From operation 50 on the boss walks in faster, chases harder and punches faster.
 export const BOSS_LATE = { fromLevel: 50, speed: 4, chargerSpeed: 6, chase: 4, killRate: 10, lossShare: 0.5, efficiency: 0.35 };

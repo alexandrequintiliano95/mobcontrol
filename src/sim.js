@@ -82,7 +82,9 @@ function moveBoss(game, dt) {
   const boss = game.boss;
   const B = bossSpec(game);
   if (!boss.active || !boss.alive || game.phase !== 'boss') return;
-  const touching = game.soldiers.some((s) => Math.hypot(s.x - boss.x, s.z - boss.z) < BOSS.radius + SOLDIER_RADIUS);
+  const tank = game.tank?.alive ? game.tank : null;
+  const touching = game.soldiers.some((s) => Math.hypot(s.x - boss.x, s.z - boss.z) < BOSS.radius + SOLDIER_RADIUS)
+    || (tank && Math.hypot(tank.x - boss.x, tank.z - boss.z) < BOSS.radius + TANK.radius);
   // Summoner keeps calling zombies either way.
   if (boss.kind === 'summoner') {
     boss.summonTimer += dt;
@@ -106,17 +108,26 @@ function moveBoss(game, dt) {
     if (s0) boss.x += clamp(s0.x - boss.x, -1, 1) * B.chase * dt;
     return;
   }
-  // Engaged: stand in the squad and punch the nearest soldier at a steady rate, shuffling toward them.
-  let near = null, best = Infinity;
-  for (const s of game.soldiers) { const d = Math.hypot(s.x - boss.x, s.z - boss.z); if (d < best) { best = d; near = s; } }
+  // Engaged: the tank stands guard, so the boss has to break it first; then it punches the nearest soldier.
+  let near = tank, best = tank ? Math.hypot(tank.x - boss.x, tank.z - boss.z) : Infinity;
+  if (!tank) for (const s of game.soldiers) { const d = Math.hypot(s.x - boss.x, s.z - boss.z); if (d < best) { best = d; near = s; } }
   if (near && best > BOSS.radius) {
     boss.x += clamp(near.x - boss.x, -1, 1) * B.chase * dt;
     boss.z = Math.max(game.squad.z - BOSS.retreat - 6, boss.z + clamp(near.z - boss.z, -1, 1) * B.chase * dt);
   }
-  // Punches only kill a soldier within reach of the fist; out of reach, the next punch waits.
+  // Punches only land on something within reach of the fist; out of reach, the next punch waits.
   const every = 1 / B.killRate;
-  const reach = BOSS.radius + SOLDIER_RADIUS + BOSS.reach;
   boss.biteTimer = Math.min(boss.biteTimer + dt, every * 2);
+  if (tank) {
+    const reach = BOSS.radius + TANK.radius + BOSS.reach;
+    while (boss.biteTimer >= every && tank.alive && Math.hypot(tank.x - boss.x, tank.z - boss.z) <= reach) {
+      boss.biteTimer -= every;
+      game.events.push({ type: 'tankPunched', x: tank.x, z: tank.z });
+      damageTank(game, BOSS.tankPunch);
+    }
+    return;
+  }
+  const reach = BOSS.radius + SOLDIER_RADIUS + BOSS.reach;
   while (boss.biteTimer >= every && game.soldiers.length) {
     let idx = -1, d2 = reach * reach;
     game.soldiers.forEach((s, i) => { const d = (s.x - boss.x) ** 2 + (s.z - boss.z) ** 2; if (d <= d2) { d2 = d; idx = i; } });
@@ -252,8 +263,15 @@ function moveTank(game, dt) {
   if (t.cooldown <= 0) {
     t.cooldown += 1 / TANK.rate;
     game.tankShots++;
-    game.bullets.push({ x: t.x, z: t.z + 1, prevZ: t.z + 1, damage: TANK.damage, pierce: 1, splash: TANK.splash, travelled: 0, hitIds: [], tank: true });
     game.events.push({ type: 'tankShot', x: t.x, z: t.z + 1 });
+    const boss = game.boss;
+    if (game.phase === 'boss' && boss.active && boss.alive) {
+      // Boss fight: the cannon is aimed at the boss wherever it stands (even right on top of the tank).
+      game.events.push({ type: 'tankBlast', x: boss.x, z: boss.z, r: TANK.splash });
+      damageBoss(game, boss, TANK.bossDamage);
+    } else {
+      game.bullets.push({ x: t.x, z: t.z + 1, prevZ: t.z + 1, damage: TANK.damage, pierce: 1, splash: TANK.splash, travelled: 0, hitIds: [], tank: true });
+    }
   }
 }
 

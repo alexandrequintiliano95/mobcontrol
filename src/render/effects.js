@@ -99,6 +99,11 @@ export function createEffects(scene) {
         burst(e.x, e.z + 0.6, 6, [0x8a8a8a, 0x5c5c5c], 0.4, 0.4);
         fx.shake = Math.max(fx.shake, 0.12);
         break;
+      case 'tankPunched':
+        // Metal sparks when the boss hits the tank.
+        burst(e.x, e.z, 10, [0xffffff, 0xffd34d, 0x6d7178], 0.9, 0.9);
+        fx.shake = Math.max(fx.shake, 0.2);
+        break;
       case 'tankBlast':
         burst(e.x, e.z, 36, FIRE, 1.3);
         blast(e.x, e.z, e.r ?? 2.6);
