@@ -26,5 +26,10 @@ test('index.html links the manifest and the iPhone icon', () => {
 test('the service worker goes to the network first, so a new deploy never mixes old and new modules', () => {
   const sw = readFileSync('sw.js', 'utf8');
   const fetchHandler = sw.slice(sw.indexOf("addEventListener('fetch'"));
-  assert.ok(fetchHandler.indexOf('fetch(req)') < fetchHandler.indexOf('cache.match'));
+  assert.ok(fetchHandler.includes('fetch(req)') && fetchHandler.includes('Promise.race([network'));
+});
+test('a slow network falls back to the cache after a few seconds instead of hanging', () => {
+  const sw = readFileSync('sw.js', 'utf8');
+  assert.match(sw, /NETWORK_TIMEOUT_MS\s*=\s*\d+/);
+  assert.ok(sw.includes('setTimeout'));
 });

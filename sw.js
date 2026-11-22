@@ -48,20 +48,30 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// On a weak signal the network can hang for a long time: after this, play from the cache.
+const NETWORK_TIMEOUT_MS = 3000;
+// After one slow answer, serve straight from the cache for a while (the page loads dozens of modules one after another).
+const SLOW_MODE_MS = 30000;
+let slowUntil = 0;
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
   const key = req.mode === 'navigate' ? './index.html' : req;
-  // Network first (always a consistent, current version online); cache when offline.
+  const fromCache = async () => (await caches.open(CACHE)).match(key, { ignoreSearch: true });
+  // Network first (always a consistent, current version online); cache when offline or when the network is too slow.
+  const network = fetch(req).then(async (res) => {
+    if (res.ok) (await caches.open(CACHE)).put(key, res.clone());
+    return res;
+  });
+  const wait = Date.now() < slowUntil ? 0 : NETWORK_TIMEOUT_MS;
+  const slow = new Promise((resolve) => setTimeout(resolve, wait)).then(async () => {
+    const hit = await fromCache();
+    if (hit && wait) slowUntil = Date.now() + SLOW_MODE_MS;
+    return hit;
+  });
   event.respondWith(
-    fetch(req)
-      .then(async (res) => {
-        if (res.ok) (await caches.open(CACHE)).put(key, res.clone());
-        return res;
-      })
-      .catch(async () => {
-        const cache = await caches.open(CACHE);
-        return (await cache.match(key, { ignoreSearch: true })) || Response.error();
-      }),
+    Promise.race([network, slow.then((hit) => hit || network)])
+      .catch(async () => (await fromCache()) || Response.error()),
   );
 });
