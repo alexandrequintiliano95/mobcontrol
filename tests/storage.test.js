@@ -15,3 +15,4 @@ test('blocked storage (private mode) never throws', () => {
 });
 test('an absurd saved level is clamped so the game stays winnable', () => assert.equal(loadSave(mem({ [SAVE_KEY]: '{"level":1e300}' })).level, 9999));
 test('unknown pickup names in the save are dropped', () => assert.deepEqual(loadSave(mem({ [SAVE_KEY]: '{"seen":["smg","laser",3]}' })).seen, ['rifle', 'smg']));
+test('the shotgun is remembered as seen', () => { const s = mem(); saveSave({ level: 6, sound: true, vibe: true, seen: ['rifle', 'shotgun'] }, s); assert.deepEqual(loadSave(s).seen, ['rifle', 'shotgun']); });

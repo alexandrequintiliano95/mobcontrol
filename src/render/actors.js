@@ -162,6 +162,7 @@ export function createActors(scene) {
       }
       if (n >= CAP.bullets) break;
       d.position.set(bl.x, 0.62, -bl.z);
+      d.rotation.set(0, bl.slope ? -Math.atan(bl.slope) : 0, 0);
       d.updateMatrix();
       bullets.setMatrixAt(n++, d.matrix);
     }

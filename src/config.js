@@ -8,6 +8,7 @@ export const FORMATION_SPACING = 0.62;
 export const MAX_SOLDIERS = 300;
 export const BULLET_SPEED = 34;
 export const BULLET_RANGE = 30;
+export const SHOTGUN_FROM_LEVEL = 6;
 export const BARREL_RADIUS = 0.75;
 export const GATE_PER_DAMAGE = 1;
 export const GATE_MAX = 30;
@@ -28,7 +29,11 @@ export const WEAPONS = {
   bazooka: { label: 'Bazuca', damage: 7, rate: 0.9, pierce: 1, splash: 1.6, range: 25 },
   ak47: { label: 'AK-47', damage: 1.6, rate: 7, pierce: 2, splash: 0, range: 27 },
   minigun: { label: 'Minigun', damage: 1.2, rate: 14, pierce: 1, splash: 0, range: 25 },
+  // The "12": several pellets per shot, spread sideways, short reach. Not a tier: offered beside the first weapon.
+  shotgun: { label: 'Escopeta 12', damage: 3, rate: 1.5, pierce: 1, splash: 0, pellets: 6, spread: 0.55, range: 9 },
 };
+// Damage per second of one soldier when every pellet hits.
+export const weaponDps = (w) => w.damage * w.rate * (w.pellets ?? 1);
 export const WEAPON_ORDER = ['rifle', 'smg', 'sniper', 'bazooka', 'ak47', 'minigun'];
 // The tank is an allied unit (one per operation), not a weapon. Zombies run faster while it is around.
 export const TANK = { hp: 25, damage: 30, bossDamage: 90, rate: 1.2, splash: 2.6, radius: 0.9, zombieSpeedup: 1.6, fromLevel: 30 };

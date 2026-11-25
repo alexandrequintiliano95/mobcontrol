@@ -1,6 +1,6 @@
 // Procedural level ("Operação N") generator. Deterministic per level number.
 import { createRng } from './rng.js';
-import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS, BOSS_KINDS, TANK, SQUAD_SPEED, BOSS_GAP, BOSS } from './config.js';
+import { ROAD_HALF, WEAPONS, WEAPON_ORDER, ZOMBIES, MAX_SOLDIERS, BOSS_KINDS, TANK, SQUAD_SPEED, BOSS_GAP, BOSS, SHOTGUN_FROM_LEVEL } from './config.js';
 
 // Difficulty knobs, grouped for tuning.
 export const DIFFICULTY = {
@@ -110,7 +110,15 @@ export function generateLevel(n, attempt = 0) {
       const reward = n >= TANK.fromLevel && k === weaponSlots.length - 1 ? { kind: 'tank' } : { kind: 'weapon', weapon: WEAPON_ORDER[drawTier] };
       if (reward.kind === 'weapon') drawWeapon = reward.weapon;
       z = spaced('barrel', slotZ);
-      addBarrel(rng.pick(LANES), z, Math.max(4, Math.round(expDps() * D.weaponHpSeconds * (n >= D.lateFrom ? D.lateWeaponHp : 1))), reward);
+      const hp = Math.max(4, Math.round(expDps() * D.weaponHpSeconds * (n >= D.lateFrom ? D.lateWeaponHp : 1)));
+      const x = rng.pick(LANES);
+      if (k === 0 && n >= SHOTGUN_FROM_LEVEL && n % 2 === 0) {
+        // Even operations (city ruins): the first weapon comes with a shotgun on the other side, the player picks one.
+        const side = x === 0 ? -LANE : x;
+        addBarrel(side, z, hp, reward);
+        addBarrel(-side, z, hp, { kind: 'weapon', weapon: 'shotgun' });
+        level.barrels.at(-1).choice = level.barrels.at(-2).choice = level.barrels.at(-1).id;
+      } else addBarrel(x, z, hp, reward);
       if (reward.kind === 'weapon') expWeapon = weapon;
       lastWasGate = false;
       return;

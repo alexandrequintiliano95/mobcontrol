@@ -1,5 +1,5 @@
 // Simple bot that plays the game: used by the balance test and the ?demo mode.
-import { ROAD_HALF, BARREL_RADIUS, SOLDIER_RADIUS, SQUAD_SPEED, BULLET_RANGE, WEAPONS } from './config.js';
+import { ROAD_HALF, BARREL_RADIUS, SOLDIER_RADIUS, SQUAD_SPEED, BULLET_RANGE, WEAPONS, weaponDps } from './config.js';
 import { formationHalfWidth } from './formation.js';
 
 const clamp = (v) => Math.max(-ROAD_HALF, Math.min(ROAD_HALF, v));
@@ -13,11 +13,11 @@ export function autopilot(game) {
   const wanted = clamp(choose(game, red));
   const n = game.soldiers.length;
   const w = WEAPONS[squad.weapon];
-  const dps = n * w.damage * w.rate;
+  const dps = n * weaponDps(w);
   const halfW = formationHalfWidth(n);
   const limit = Math.max(0, ROAD_HALF - halfW - SOLDIER_RADIUS);
   const blockers = game.barrels.filter(
-    (b) => b.alive && b.z > squad.z - 1 && b.z <= squad.z + 14 && b.hp > dps * Math.max(0, (b.z - squad.z) / SQUAD_SPEED) * 0.95,
+    (b) => b.alive && b.z > squad.z - 1 && b.z <= squad.z + 14 && b.hp > dps * Math.max(0, Math.min(b.z - squad.z, w.range ?? Infinity) / SQUAD_SPEED) * 0.95,
   );
   const safe = (x) =>
     !(red && onSide(red, x)) && blockers.every((b) => Math.abs(x - b.x) >= BARREL_RADIUS + halfW + SOLDIER_RADIUS + 0.15);
@@ -33,11 +33,11 @@ function choose(game, red) {
   const { squad } = game;
   const n = game.soldiers.length;
   const w = WEAPONS[squad.weapon];
-  const dps = n * w.damage * w.rate;
+  const dps = n * weaponDps(w);
   const edge = ROAD_HALF - 0.5;
   const ahead = (z, max) => z > squad.z && z <= squad.z + max;
 
-  const canKill = (b) => b.hp <= dps * ((b.z - squad.z) / SQUAD_SPEED) * 0.95;
+  const canKill = (b) => b.hp <= dps * (Math.min(b.z - squad.z, w.range ?? Infinity) / SQUAD_SPEED) * 0.95;
   const halfW = formationHalfWidth(n);
 
   // 2. Swerve around barrels we cannot destroy in time.
@@ -49,7 +49,7 @@ function choose(game, red) {
 
   // 3. Aim at the nearest barrel we can break.
   const target = game.barrels
-    .filter((b) => b.alive && b.z > squad.z + 2 && b.z <= squad.z + (WEAPONS[squad.weapon]?.range ?? BULLET_RANGE) && canKill(b) && !(red && onSide(red, b.x)))
+    .filter((b) => b.alive && b.z > squad.z + 2 && b.z <= squad.z + (WEAPONS[squad.weapon]?.range ?? BULLET_RANGE) && canKill(b) && !(red && onSide(red, b.x)) && !isShotgunPick(game, b))
     .sort((a, b) => a.z - b.z)[0];
   if (target) return clamp(target.x);
 
@@ -61,4 +61,9 @@ function choose(game, red) {
   if (game.phase === 'boss' && game.boss.alive) return clamp(game.boss.x);
   const zombie = game.zombies.filter((z) => z.alive && z.active && z.z > squad.z).sort((a, b) => a.z - b.z)[0];
   return zombie ? clamp(zombie.x) : 0;
+}
+
+// When the shotgun is offered beside another weapon, the bot always takes the other one (long reach is safer).
+function isShotgunPick(game, b) {
+  return b.reward.kind === 'weapon' && b.reward.weapon === 'shotgun' && game.barrels.some((o) => o !== b && o.alive && o.z === b.z && o.reward.kind === 'weapon');
 }

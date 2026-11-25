@@ -7,6 +7,7 @@ const NEW_PICKUP = {
   bazooka: { name: 'Bazuca', tip: 'Explode e acerta vários de uma vez' },
   ak47: { name: 'AK-47', tip: 'Rajada pesada que atravessa 2 zumbis' },
   minigun: { name: 'Minigun', tip: 'Chuva de balas sem parar' },
+  shotgun: { name: 'Escopeta 12', tip: 'Maior dano de perto, espalha pros lados. Escolha: ela ou a outra arma' },
   tank: { name: 'Tanque', tip: 'Um tanque luta do seu lado, mas os zumbis correm mais' },
 };
 

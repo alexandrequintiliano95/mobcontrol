@@ -3,7 +3,7 @@ export const SAVE_KEY = 'esquadrao-z/save/v1';
 export const MAX_LEVEL = 9999;
 const DEFAULTS = Object.freeze({ level: 1, sound: true, vibe: true, seen: Object.freeze(['rifle']) });
 // Pickups the player may have been introduced to (see src/discovery.js).
-const PICKUPS = ['rifle', 'smg', 'sniper', 'bazooka', 'ak47', 'minigun', 'tank'];
+const PICKUPS = ['rifle', 'smg', 'sniper', 'bazooka', 'ak47', 'minigun', 'shotgun', 'tank'];
 
 function defaultStorage() {
   try { return globalThis.localStorage; } catch { return undefined; }

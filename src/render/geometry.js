@@ -169,6 +169,11 @@ export function weaponGeometry(id) {
         ...[[-0.05, 0.05], [0.05, 0.05], [-0.05, -0.05], [0.05, -0.05]].map(([x, y]) => part(tube(0.03, 0.03, 0.8, 6), metal, x, y, -0.2, Math.PI / 2)),
         part(box(0.22, 0.22, 0.3), dark, 0, 0, 0.25), part(box(0.18, 0.06, 0.18), 0xd49b00, 0, -0.15, 0.25),
       ]);
+    case 'shotgun':
+      return mergeColored([
+        part(tube(0.045, 0.045, 0.6, 8), metal, -0.045, 0.03, -0.2, Math.PI / 2), part(tube(0.045, 0.045, 0.6, 8), metal, 0.045, 0.03, -0.2, Math.PI / 2),
+        part(box(0.16, 0.12, 0.2), dark, 0, 0, 0.15), part(box(0.1, 0.14, 0.32), wood, 0, -0.04, 0.4, 0.2), part(box(0.12, 0.07, 0.22), wood, 0, -0.05, -0.15),
+      ]);
     case 'tank':
       return mergeColored([
         part(box(0.8, 0.25, 1.0), olive, 0, 0, 0), part(box(0.9, 0.15, 1.05), dark, 0, -0.17, 0),

@@ -32,6 +32,7 @@ O dono do projeto fala português e pede ajustes de jogabilidade em linguagem in
 - Zumbis andam reto, sem convergir para o esquadrão (`ZOMBIE_HOMING = 0`), e avançam desde o início da fase.
 - Até a Operação 19 a fase começa com mais barris antes da primeira horda; da 20 em diante o começo é curto.
 - Armas fortes no meio (45%) e perto do fim (75%) da estrada; da Operação 25 em diante a primeira fica em 30%.
+- Escopeta 12 (`shotgun`): 6 chumbos em leque, maior dano por tiro, alcance curto (9). Da Operação 6 em diante, nas fases pares, aparece ao lado da primeira arma; quebrou um barril do par, o outro some. O piloto automático sempre escolhe a outra.
 - AK-47 a partir da 20, minigun a partir da 25. Da 30 em diante, o último barril de arma traz **um** tanque aliado, e os zumbis ficam 60% mais rápidos enquanto ele existe.
 - O chefão vai até o batalhão, para e soca (8 por segundo); nunca passa reto. Três chefões que se revezam a cada 5 operações.
 - Cenário alterna entre deserto (fases ímpares) e cidade em ruínas (fases pares).

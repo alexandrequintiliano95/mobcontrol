@@ -1,7 +1,7 @@
 // Game simulation: pure rules, no DOM and no three.js. See docs/superpowers/plans for the data contracts.
 import {
   ROAD_HALF, SQUAD_SPEED, STEER_SPEED, SOLDIER_RADIUS, SOLDIER_FOLLOW, MAX_SOLDIERS,
-  BULLET_SPEED, BULLET_RANGE, KILL_REWARD, BARREL_RADIUS, RECRUIT_SPEED, WEAPONS, BOSS_GAP,
+  BULLET_SPEED, BULLET_RANGE, KILL_REWARD, BARREL_RADIUS, RECRUIT_SPEED, WEAPONS, weaponDps, BOSS_GAP,
   GATE_PER_DAMAGE, GATE_MAX, GATE_FULL_SQUAD, TANK, ZOMBIES, ZOMBIE_ACTIVATE_DIST, ZOMBIE_HOMING, BOSS, BOSS_LATE, BOSS_HIGH,
 } from './config.js';
 import { formationOffsets, formationHalfWidth, formationRadius } from './formation.js';
@@ -30,7 +30,7 @@ export function createGame(level, options = {}) {
     soldiers: [],
     recruits: [],
     bullets: [],
-    barrels: level.barrels.map((b) => ({ id: b.id, x: b.x, z: b.z, hp: b.hp, maxHp: b.hp, reward: b.reward, alive: true })),
+    barrels: level.barrels.map((b) => ({ id: b.id, x: b.x, z: b.z, hp: b.hp, maxHp: b.hp, reward: b.reward, choice: b.choice, alive: true })),
     gates: level.gates.map((g) => ({ id: g.id, side: g.side, z: g.z, value: g.value, passed: false })),
     zombies: level.zombies.map((z) => makeZombie(z.id, z.kind, z.x, z.z, z.hp, false)),
     boss: { x: 0, z: level.length + BOSS_GAP, hp: level.boss.hp, maxHp: level.boss.hp, active: false, alive: true, biteTimer: 0, kind: level.boss.kind ?? 'brute', summonTimer: 0 },
@@ -240,14 +240,14 @@ function moveSquad(game, dt, input) {
       game.boss.active = true;
       // The boss always takes a few seconds, however big the squad got.
       const w = WEAPONS[squad.weapon];
-      let minHp = game.soldiers.length * w.damage * w.rate * BOSS.minSeconds;
+      let minHp = game.soldiers.length * weaponDps(w) * BOSS.minSeconds;
       if (game.level.number >= BOSS_LATE.fromLevel) {
         // Late operations: the boss lasts its walk-in plus the time it needs to punch down `lossShare` of the squad,
         // so a huge squad still pays for the fight (it still wins more easily than a small one).
         const B = bossSpec(game), n = game.soldiers.length;
         const walkIn = BOSS_GAP / (game.boss.kind === 'charger' ? B.chargerSpeed : B.speed);
         // `efficiency`: not every bullet lands on the boss and the squad shrinks while it punches.
-        minHp = Math.max(minHp, B.efficiency * n * w.damage * w.rate * (walkIn + (B.lossShare * n) / B.killRate));
+        minHp = Math.max(minHp, B.efficiency * n * weaponDps(w) * (walkIn + (B.lossShare * n) / B.killRate));
       }
       if (game.boss.hp < minHp) game.boss.hp = game.boss.maxHp = Math.round(minHp);
       game.events.push({ type: 'bossSpawn' });
@@ -313,7 +313,15 @@ function fire(game, dt) {
       s.cooldown += 1 / w.rate;
       game.shots++;
       const z = s.z + BULLET_SPAWN_AHEAD;
-      game.bullets.push({ x: s.x, z, prevZ: z, damage: w.damage, pierce: w.pierce, splash: w.splash, range: w.range ?? BULLET_RANGE, travelled: 0, hitIds: [] });
+      const pellets = w.pellets ?? 1;
+      for (let p = 0; p < pellets; p++) {
+        // Pellets fan out evenly across the spread angle (lateral speed per unit of forward travel).
+        const a = pellets > 1 ? (p / (pellets - 1) - 0.5) * w.spread : 0;
+        game.bullets.push({
+          x: s.x, z, prevZ: z, damage: w.damage, pierce: w.pierce, splash: w.splash, range: w.range ?? BULLET_RANGE, travelled: 0, hitIds: [],
+          ...(pellets > 1 && { slope: Math.tan(a), gateDamage: w.damage / pellets }),
+        });
+      }
     }
   }
 }
@@ -335,6 +343,7 @@ function moveBullets(game, dt) {
     b.prevZ = b.z;
     const d = BULLET_SPEED * dt;
     b.z += d;
+    if (b.slope) b.x += b.slope * d;
     b.travelled += d;
     const consumed = hitTargets(game, b, targets);
     if (!consumed && b.travelled <= (b.range ?? BULLET_RANGE)) alive.push(b);
@@ -362,7 +371,7 @@ function hitTargets(game, b, targets) {
       game.hits++;
       // Big squads fire many more shots, so each shot counts less (full point up to GATE_FULL_SQUAD soldiers).
       const scale = Math.min(1, GATE_FULL_SQUAD / Math.max(1, game.soldiers.length));
-      t.ref.value = Math.max(t.ref.value, Math.min(GATE_MAX, t.ref.value + b.damage * GATE_PER_DAMAGE * scale)); // shots raise a gate up to GATE_MAX, never lower it
+      t.ref.value = Math.max(t.ref.value, Math.min(GATE_MAX, t.ref.value + (b.gateDamage ?? b.damage) * GATE_PER_DAMAGE * scale)); // shots raise a gate up to GATE_MAX, never lower it
       return true;
     }
     if (!t.ref.alive) continue;
@@ -442,6 +451,12 @@ function damageBarrel(game, barrel, damage) {
   if (barrel.hp > 0) return;
   barrel.alive = false;
   game.events.push({ type: 'barrelDestroyed', id: barrel.id, x: barrel.x, z: barrel.z, reward: barrel.reward });
+  // A pair of weapon barrels is a choice: breaking one makes the other vanish.
+  if (barrel.choice) {
+    for (const o of game.barrels) {
+      if (o.alive && o.choice === barrel.choice) { o.alive = false; game.events.push({ type: 'barrelGone', id: o.id, x: o.x, z: o.z }); }
+    }
+  }
   if (barrel.reward.kind === 'soldiers') {
     for (let i = 0; i < barrel.reward.count; i++) {
       game.recruits.push({ id: game.nextId++, x: barrel.x + game.rng.range(-0.4, 0.4), z: barrel.z + game.rng.range(-0.3, 0.3) });

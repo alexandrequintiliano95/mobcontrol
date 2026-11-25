@@ -68,6 +68,9 @@ export function createEffects(scene) {
         blast(e.x, e.z, 1.8);
         fx.shake = Math.max(fx.shake, 0.3);
         break;
+      case 'barrelGone':
+        burst(e.x, e.z, 14, [0xcfcfcf, 0x8a8a8a, 0xffffff], 0.7);
+        break;
       case 'barrelCrash':
         burst(e.x, e.z, 50, FIRE, 1.3);
         blast(e.x, e.z, 2.2);
