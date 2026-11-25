@@ -12,10 +12,11 @@ import { WEAPONS } from './config.js';
 import { createAudio, shotSound } from './audio.js';
 import { createHaptics, createWakeLock } from './device.js';
 import { registerServiceWorker, setupInstall } from './pwa.js';
+import { readFlags } from './flags.js';
 
-const params = new URLSearchParams(location.search);
-const DEBUG = params.has('debug');
-const DEMO = params.has('demo');
+const flags = readFlags();
+const DEBUG = flags.debug;
+const DEMO = flags.demo;
 const STEP = 1 / 60;
 
 const stageEl = document.getElementById('stage');
@@ -96,7 +97,7 @@ let state = 'menu';
 let announce = null;
 let game = null;
 // ?level=N only picks the operation to play; it never overwrites saved progress.
-let levelNumber = params.has('level') ? Math.min(MAX_LEVEL, Math.max(1, Math.floor(Number(params.get('level'))) || 1)) : save.level;
+let levelNumber = flags.level !== null ? Math.min(MAX_LEVEL, Math.max(1, flags.level)) : save.level;
 let endTimer = 0;
 let lastShots = 0, lastHits = 0, peak = 1;
 const clock = { acc: 0 };
@@ -106,7 +107,7 @@ let shownCount = null;
 function newGame() {
   // Every try draws new weapons (the demo keeps the default draw).
   game = createGame(generateLevel(levelNumber, DEMO ? 0 : 1 + Math.floor(Math.random() * 1e6)));
-  const extra = Math.floor(Number(params.get('soldiers')) || 0) - 1;
+  const extra = flags.soldiers - 1;
   if (extra > 0) addSoldiers(game, extra);
   input.reset(0);
   announce = null;

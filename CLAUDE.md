@@ -7,7 +7,7 @@ O dono do projeto fala português e pede ajustes de jogabilidade em linguagem in
 ## Como trabalhar
 
 - Sem build: o navegador carrega os arquivos do repositório como estão. Publicar é fazer push na `main`; a Vercel (`mobcontrol-six.vercel.app`) faz o deploy sozinha.
-- `npm install` uma vez, depois `npm test` (node --test, ~90 testes). Rodar local: `npm run serve` → http://localhost:5173 (`?debug`, `?level=N`, `?soldiers=N`, `?demo`).
+- `npm install` uma vez, depois `npm test` (node --test, ~90 testes). Rodar local: `npm run serve` → http://localhost:5173 (`?debug`, `?level=N`, `?soldiers=N`, `?demo`; só funcionam em localhost, ver `src/flags.js`). As tabelas do `src/config.js` são congeladas (`deepFreeze`) para não serem alteradas pelo console.
 - Regras do jogo têm teste antes do código (TDD). Ajustes só de números não precisam de teste novo, mas `npm test` tem que passar.
 - Depois de mexer na dificuldade, conferir com o piloto automático: `node --input-type=module -e "..."` usando `createGame`, `stepGame`, `autopilot` e `generateLevel` (ver `tests/balance.test.js`). Ele deve vencer as Operações 1 a 3; nas fases altas, algumas derrotas são esperadas.
 - Arquivo novo em `src/`, `css/`, `icons/` ou `vendor/` precisa entrar em `ASSETS` no `sw.js`; o teste avisa se faltar.

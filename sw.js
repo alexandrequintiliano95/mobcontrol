@@ -15,6 +15,7 @@ const ASSETS = [
   './src/clock.js',
   './src/config.js',
   './src/device.js',
+  './src/flags.js',
   './src/formation.js',
   './src/input.js',
   './src/level.js',
