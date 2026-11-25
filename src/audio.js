@@ -11,7 +11,8 @@ export function createLimiter(gaps) {
   };
 }
 
-const GAPS = { shot: 0.07, hit: 0.05, zombieDown: 0.06, soldierDown: 0.08, recruit: 0.05 };
+// Bazooka rockets land all the time with a big squad: one soft boom every 2 seconds is enough.
+export const GAPS = { shot: 0.07, hit: 0.05, zombieDown: 0.06, soldierDown: 0.08, recruit: 0.05, rocketBoom: 2 };
 
 export function createAudio() {
   let ctx = null, master = null, noiseBuf = null;
@@ -67,6 +68,8 @@ export function createAudio() {
     shot: () => { noise(0.05, 0.18, 3800, 2); tone('square', 900, 300, 0.04, 0.04); },
     hit: () => tone('triangle', 520, 380, 0.04, 0.05),
     cannon: () => { noise(0.25, 0.45, 900, 1.2); tone('sine', 90, 45, 0.25, 0.3); },
+    // Soft, low "tuumm": a deep sine drop with a muffled rumble.
+    rocketBoom: () => { tone('sine', 85, 38, 0.55, 0.22); noise(0.45, 0.14, 420, 0.8); },
     explode: () => { noise(0.5, 0.6, 1600, 0.7); tone('sine', 120, 40, 0.4, 0.35); },
     recruit: () => { tone('triangle', 660, 990, 0.09, 0.12); tone('triangle', 990, 1320, 0.09, 0.1, 0.07); },
     gateGood: () => [523, 659, 784, 1046].forEach((f, i) => tone('square', f, f, 0.09, 0.07, i * 0.06)),

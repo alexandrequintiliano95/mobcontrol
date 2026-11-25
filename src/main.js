@@ -52,6 +52,7 @@ const FEEDBACK = {
   killReward: ['recruit', 'light'],
   tankShot: ['cannon'],
   tankBlast: ['explode'],
+  rocketBlast: ['rocketBoom'],
   tankPunched: ['hit', 'light'],
   tankDestroyed: ['explode', 'heavy'],
   shieldBroken: ['hit'],

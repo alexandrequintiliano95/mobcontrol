@@ -7,3 +7,8 @@ test('the limiter lets a sound through only after its gap', () => {
   assert.equal(ok('shot', 1), true); assert.equal(ok('shot', 1.05), false); assert.equal(ok('shot', 1.08), true);
   assert.equal(ok('win', 1), true); assert.equal(ok('win', 1), true);
 });
+test('the bazooka boom plays at most once every 2 seconds', async () => {
+  const { GAPS } = await import('../src/audio.js');
+  const ok = createLimiter(GAPS);
+  assert.equal(ok('rocketBoom', 10), true); assert.equal(ok('rocketBoom', 11.5), false); assert.equal(ok('rocketBoom', 12), true);
+});
