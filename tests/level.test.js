@@ -22,6 +22,11 @@ test('everything sits on the road, before the finish line', () => {
     for (const g of l.gates) { assert.ok(g.side === -1 || g.side === 1); assert.ok(g.z >= 10 && g.z <= l.length - 10); }
   }
 });
+test('weapon and tank barrels sit in a side lane, so a big squad can still steer clear of them', () => {
+  for (let n = 1; n <= 60; n++) {
+    for (const b of generateLevel(n).barrels) if (b.reward.kind !== 'soldiers') assert.ok(Math.abs(b.x) >= ROAD_HALF / 2 - 1e-9, `operação ${n}`);
+  }
+});
 test('later operations are longer and harder', () => {
   const [a, b, c] = [1, 5, 10].map(generateLevel);
   assert.ok(a.length <= b.length && b.length <= c.length);

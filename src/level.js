@@ -16,6 +16,8 @@ export const DIFFICULTY = {
 const LANE = ROAD_HALF / 2;
 const LANES = [-LANE, 0, LANE];
 const ZOMBIE_X = ROAD_HALF - 0.35;
+// How far a horde spreads to each side of its center (kept from the narrower road, so hordes stay as dense).
+const HORDE_SPREAD = 2.2;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 // `attempt` only changes which weapons show up (a new draw on every try). The road, hordes and barrels are always
@@ -111,14 +113,15 @@ export function generateLevel(n, attempt = 0) {
       if (reward.kind === 'weapon') drawWeapon = reward.weapon;
       z = spaced('barrel', slotZ);
       const hp = Math.max(4, Math.round(expDps() * D.weaponHpSeconds * (n >= D.lateFrom ? D.lateWeaponHp : 1)));
-      const x = rng.pick(LANES);
+      // Never in the middle lane: a big squad must still be able to steer clear of a weapon it does not want.
+      const lane = rng.pick(LANES);
+      const side = lane === 0 ? -LANE : lane;
       if (k === 0 && n >= SHOTGUN_FROM_LEVEL && n % 2 === 0) {
         // Even operations (city ruins): the first weapon comes with a shotgun on the other side, the player picks one.
-        const side = x === 0 ? -LANE : x;
         addBarrel(side, z, hp, reward);
         addBarrel(-side, z, hp, { kind: 'weapon', weapon: 'shotgun' });
         level.barrels.at(-1).choice = level.barrels.at(-2).choice = level.barrels.at(-1).id;
-      } else addBarrel(x, z, hp, reward);
+      } else addBarrel(side, z, hp, reward);
       if (reward.kind === 'weapon') expWeapon = weapon;
       lastWasGate = false;
       return;
@@ -163,7 +166,7 @@ export function generateLevel(n, attempt = 0) {
       if (group.length === 0) group.push({ kind: 'walker', hp: ZOMBIES.walker.hp * hpScale });
       for (const zb of group) {
         if (level.zombies.length >= D.maxZombies) break;
-        const x = clamp(cx + rng.range(-LANE, LANE), -ZOMBIE_X, ZOMBIE_X);
+        const x = clamp(cx + rng.range(-HORDE_SPREAD, HORDE_SPREAD), -ZOMBIE_X, ZOMBIE_X);
         // Zombies march from the start, so spawn them further out: they meet the squad around the slot.
         const meet = z + rng.range(0, 4 + 0.35 * group.length);
         const spawn = meet * (1 + ZOMBIES[zb.kind].speed / SQUAD_SPEED);
@@ -179,7 +182,7 @@ export function generateLevel(n, attempt = 0) {
   });
 
   // Every operation ends with a blue (bonus) gate right before the boss.
-  addGate(spaced('gate', length - 16), true);
+  addGate(Math.min(spaced('gate', length - 16), length - 2), true);
 
   level.boss.kind = BOSS_KINDS[Math.floor((n - 1) / 5) % BOSS_KINDS.length];
   if (!late) {

@@ -1,5 +1,5 @@
 // Tunable game constants (frozen, so they cannot be changed from the browser console). Simulation units: x is lateral, z is forward distance.
-export const ROAD_HALF = 4.4;
+export const ROAD_HALF = 6;
 export const SQUAD_SPEED = 7;
 export const STEER_SPEED = 20;
 export const SOLDIER_RADIUS = 0.28;
@@ -30,7 +30,7 @@ export const WEAPONS = deepFreeze({
   rifle: { label: 'Fuzil', damage: 1, rate: 3, pierce: 1, splash: 0 },
   smg: { label: 'Metralhadora', damage: 0.75, rate: 6, pierce: 1, splash: 0 },
   sniper: { label: 'Sniper', damage: 6, rate: 0.9, pierce: 4, splash: 0, range: 27 },
-  bazooka: { label: 'Bazuca', damage: 7, rate: 0.9, pierce: 1, splash: 1.6, range: 25 },
+  bazooka: { label: 'Bazuca', damage: 7, rate: 1.5, pierce: 1, splash: 1.6, range: 25 },
   ak47: { label: 'AK-47', damage: 1.6, rate: 7, pierce: 2, splash: 0, range: 27 },
   minigun: { label: 'Minigun', damage: 1.2, rate: 14, pierce: 1, splash: 0, range: 25 },
   // The "12": several pellets per shot, spread sideways, short reach. Not a tier: offered beside the first weapon.

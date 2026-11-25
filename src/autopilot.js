@@ -1,6 +1,6 @@
 // Simple bot that plays the game: used by the balance test and the ?demo mode.
 import { ROAD_HALF, BARREL_RADIUS, SOLDIER_RADIUS, SQUAD_SPEED, BULLET_RANGE, WEAPONS, weaponDps } from './config.js';
-import { formationHalfWidth } from './formation.js';
+import { formationHalfWidth, formationRadius } from './formation.js';
 
 const clamp = (v) => Math.max(-ROAD_HALF, Math.min(ROAD_HALF, v));
 const onSide = (gate, x) => (gate.side === 1 ? x >= 0 : x < 0);
@@ -17,10 +17,13 @@ export function autopilot(game) {
   const halfW = formationHalfWidth(n);
   const limit = Math.max(0, ROAD_HALF - halfW - SOLDIER_RADIUS);
   const blockers = game.barrels.filter(
-    (b) => b.alive && b.z > squad.z - 1 && b.z <= squad.z + 14 && b.hp > dps * Math.max(0, Math.min(b.z - squad.z, w.range ?? Infinity) / SQUAD_SPEED) * 0.95,
+    (b) => b.alive && b.z > squad.z - formationRadius(n) - 1 && b.z <= squad.z + 14 && b.hp > dps * Math.max(0, Math.min(b.z - squad.z, w.range ?? Infinity) / SQUAD_SPEED) * 0.95,
   );
+  // On the wide road a long sideways move takes time: never cut across a barrel that is about to be reached.
+  const reach = BARREL_RADIUS + halfW + SOLDIER_RADIUS + 0.15;
+  const crosses = (x) => blockers.some((b) => b.z - squad.z < 6 && (x - b.x) * (squad.x - b.x) < 0);
   const safe = (x) =>
-    !(red && onSide(red, x)) && blockers.every((b) => Math.abs(x - b.x) >= BARREL_RADIUS + halfW + SOLDIER_RADIUS + 0.15);
+    !(red && onSide(red, x)) && !crosses(x) && blockers.every((b) => Math.abs(x - b.x) >= reach);
   // Closest safe lateral position to where we want to be (never on a red gate, never into a barrel we cannot break).
   const candidates = [];
   for (let x = -limit; x <= limit + 1e-9; x += 0.1) candidates.push(x);
