@@ -20,3 +20,8 @@ test('actors stand on the ground at the agreed sizes', () => {
   assert.ok(Math.abs(z.min.y) < 0.02 && z.max.y > 0.95 && z.max.y < 1.2, JSON.stringify(z));
   assert.ok(Math.abs(b.max.x - BARREL_RADIUS) < 0.05 && b.max.y > 1.1 && b.max.y < 1.4, JSON.stringify(b));
 });
+test('the bazooka rocket points forward (-z) with its flame at the back', async () => {
+  const { rocketGeometry } = await import('../src/render/geometry.js');
+  const r = box(rocketGeometry());
+  assert.ok(r.max.z - r.min.z > 0.5 && r.max.x - r.min.x < 0.3, JSON.stringify(r));
+});

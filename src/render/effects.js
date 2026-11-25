@@ -38,7 +38,7 @@ export function createEffects(scene) {
   let textIndex = 0;
   const d = new Object3D();
   const color = new Color();
-  const fx = { shake: 0 };
+  const fx = { shake: 0, rocketBudget: 4 };
 
   function burst(x, z, count, palette, power = 1, y = 0.6) {
     for (let i = 0; i < count; i++) {
@@ -107,6 +107,15 @@ export function createEffects(scene) {
         burst(e.x, e.z, 10, [0xffffff, 0xffd34d, 0x6d7178], 0.9, 0.9);
         fx.shake = Math.max(fx.shake, 0.2);
         break;
+      case 'rocketBlast':
+        // Many rockets can land at once with a big squad: only the first few each frame get the full show.
+        if (fx.rocketBudget <= 0) break;
+        fx.rocketBudget--;
+        burst(e.x, e.z, 18, FIRE, 0.9);
+        burst(e.x, e.z, 5, [0x7a7a7a, 0x4d4d4d], 0.5, 0.4);
+        blast(e.x, e.z, (e.r ?? 1.6) * 0.9);
+        fx.shake = Math.max(fx.shake, 0.08);
+        break;
       case 'tankBlast':
         burst(e.x, e.z, 36, FIRE, 1.3);
         blast(e.x, e.z, e.r ?? 2.6);
@@ -150,6 +159,7 @@ export function createEffects(scene) {
   };
 
   fx.update = (dt) => {
+    fx.rocketBudget = 4;
     fx.shake = Math.max(0, fx.shake - dt * 1.6);
     let n = 0;
     for (let i = particles.length - 1; i >= 0; i--) {

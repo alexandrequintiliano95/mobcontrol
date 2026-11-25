@@ -318,7 +318,7 @@ function fire(game, dt) {
         // Pellets fan out evenly across the spread angle (lateral speed per unit of forward travel).
         const a = pellets > 1 ? (p / (pellets - 1) - 0.5) * w.spread : 0;
         game.bullets.push({
-          x: s.x, z, prevZ: z, damage: w.damage, pierce: w.pierce, splash: w.splash, range: w.range ?? BULLET_RANGE, travelled: 0, hitIds: [],
+          x: s.x, z, prevZ: z, weapon: game.squad.weapon, damage: w.damage, pierce: w.pierce, splash: w.splash, range: w.range ?? BULLET_RANGE, travelled: 0, hitIds: [],
           ...(pellets > 1 && { slope: Math.tan(a), gateDamage: w.damage / pellets }),
         });
       }
@@ -379,6 +379,7 @@ function hitTargets(game, b, targets) {
     b.hitIds.push(t.ref.id);
     if (b.splash > 0) {
       if (b.tank) game.events.push({ type: 'tankBlast', x: b.x, z: key, r: b.splash });
+      else game.events.push({ type: 'rocketBlast', x: b.x, z: key, r: b.splash });
       if (t.kind !== 'zombie') damage(game, t, b.damage);
       for (const z of game.zombies) {
         if (z.alive && z.active && Math.hypot(z.x - b.x, z.z - key) <= b.splash) damage(game, { kind: 'zombie', ref: z }, b.damage);

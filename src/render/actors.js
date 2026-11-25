@@ -3,11 +3,13 @@ import {
   InstancedMesh, MeshLambertMaterial, MeshBasicMaterial, BoxGeometry, CircleGeometry, PlaneGeometry,
   Object3D, Color, DynamicDrawUsage,
 } from 'three';
-import { soldierGeometry, legGeometry, zombieGeometry, zombieLegGeometry } from './geometry.js';
+import { soldierGeometry, legGeometry, zombieGeometry, zombieLegGeometry, rocketGeometry } from './geometry.js';
 import { WEAPONS } from '../config.js';
 import { AdditiveBlending, SphereGeometry } from 'three';
 
-const CAP = { soldiers: 360, zombies: 400, bullets: 2000, shadows: 800, bars: 400 };
+const CAP = { soldiers: 360, zombies: 400, bullets: 2000, shadows: 800, bars: 400, rockets: 400, trails: 600, smoke: 250 };
+// Muzzle flash size per weapon (sniper and bazooka kick much harder than a rifle).
+const FLASH = { sniper: 2.2, bazooka: 2.6, shotgun: 1.8 };
 const ZOMBIE_LOOK = {
   walker: { scale: 1, color: new Color(1, 1, 1) },
   runner: { scale: 0.92, color: new Color(1.15, 1.2, 0.85) },
@@ -38,6 +40,19 @@ export function createActors(scene) {
   const bullets = instanced(new BoxGeometry(0.09, 0.09, 0.9), new MeshBasicMaterial({ color: 0xffe27a, transparent: true, opacity: 0.95, blending: AdditiveBlending, depthWrite: false }), CAP.bullets);
   // Tank shells: a big glowing round so the cannon reads clearly.
   const shells = instanced(new SphereGeometry(0.38, 10, 8), new MeshBasicMaterial({ color: 0xff8a2a, transparent: true, opacity: 0.95, blending: AdditiveBlending, depthWrite: false }), 64);
+  // Sniper: a long white streak that grows behind the round (the "tracer line" of a high-velocity shot).
+  const trails = instanced(new BoxGeometry(0.045, 0.045, 1).translate(0, 0, 0.5), new MeshBasicMaterial({ color: 0xdff6ff, transparent: true, opacity: 0.85, blending: AdditiveBlending, depthWrite: false }), CAP.trails);
+  const trailHeads = instanced(new SphereGeometry(0.09, 6, 4), new MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1, blending: AdditiveBlending, depthWrite: false }), CAP.trails);
+  // Bazooka: a real rocket with a flame, leaving grey smoke puffs behind (and a backblast at the shooter).
+  const rockets = instanced(rocketGeometry(), lambert, CAP.rockets);
+  const smoke = instanced(new SphereGeometry(0.5, 7, 5), new MeshLambertMaterial({ color: 0xb9b4ab, transparent: true, opacity: 0.55, depthWrite: false }), CAP.smoke);
+  const puffs = [];
+  const launched = new WeakSet();
+  const addPuff = (x, y, z, size, life, vx = 0, vz = 0) => {
+    if (puffs.length >= CAP.smoke) puffs.shift();
+    puffs.push({ x, y, z, size, life, max: life, vx, vz });
+  };
+  let lastTime = null;
   const flashes = instanced(new SphereGeometry(0.13, 6, 4), new MeshBasicMaterial({ color: 0xffc94d, transparent: true, opacity: 0.9, blending: AdditiveBlending, depthWrite: false }), CAP.soldiers);
   const shadowGeo = new CircleGeometry(0.3, 12).rotateX(-Math.PI / 2);
   const shadows = instanced(shadowGeo, new MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false }), CAP.shadows);
@@ -46,7 +61,7 @@ export function createActors(scene) {
   barBack.renderOrder = barFill.renderOrder = 5;
   soldierBodies.setColorAt(0, WHITE);
   zombieBodies.setColorAt(0, WHITE);
-  const all = [soldierBodies, soldierLegs, zombieBodies, zombieLegs, shields, bullets, shells, flashes, shadows, barBack, barFill];
+  const all = [soldierBodies, soldierLegs, zombieBodies, zombieLegs, shields, bullets, trails, trailHeads, rockets, smoke, shells, flashes, shadows, barBack, barFill];
   for (const m of all) scene.add(m);
 
   const d = new Object3D();
@@ -85,12 +100,15 @@ export function createActors(scene) {
     const running = game.phase === 'run' ? 1 : 0.5;
     let s = 0, sh = 0, f = 0;
     const period = 1 / WEAPONS[game.squad.weapon].rate;
+    const flashSize = FLASH[game.squad.weapon] ?? 1;
+    const dt = lastTime === null ? 0 : Math.min(0.1, Math.max(0, time - lastTime));
+    lastTime = time;
     for (const sol of game.soldiers) {
       if (s >= CAP.soldiers) break;
       if (sol.cooldown > period - 0.06 && f < CAP.soldiers) {
         d.position.set(sol.x + 0.12, 0.62, -sol.z - 0.6);
         d.rotation.set(0, 0, 0);
-        const fs = 0.8 + Math.random() * 0.6;
+        const fs = (0.8 + Math.random() * 0.6) * flashSize;
         d.scale.set(fs, fs, fs * 1.6);
         d.updateMatrix();
         flashes.setMatrixAt(f++, d.matrix);
@@ -149,8 +167,39 @@ export function createActors(scene) {
     shields.count = sz;
     barBack.count = barFill.count = b;
 
-    let n = 0, sn = 0;
+    let n = 0, sn = 0, tn = 0, rn = 0;
+    const rocketCount = game.bullets.reduce((c, bl) => c + (bl.weapon === 'bazooka' ? 1 : 0), 0);
+    const puffChance = rocketCount ? Math.min(0.5, 5 / rocketCount) : 0;
     for (const bl of game.bullets) {
+      if (bl.weapon === 'sniper') {
+        if (tn >= CAP.trails) continue;
+        d.position.set(bl.x, 0.62, -bl.z);
+        d.rotation.set(0, 0, 0);
+        d.scale.set(1, 1, Math.max(0.5, Math.min(bl.travelled, 9)));
+        d.updateMatrix();
+        trails.setMatrixAt(tn, d.matrix);
+        d.scale.set(1, 1, 1);
+        d.updateMatrix();
+        trailHeads.setMatrixAt(tn++, d.matrix);
+        continue;
+      }
+      if (bl.weapon === 'bazooka') {
+        if (!launched.has(bl)) {
+          launched.add(bl);
+          // Backblast: smoke blown out behind the launcher.
+          if (Math.random() < puffChance) for (let k = 0; k < 2; k++) addPuff(bl.x + (Math.random() - 0.5) * 0.4, 0.75, -(bl.z - bl.travelled) + 0.6, 0.3, 0.5, (Math.random() - 0.5) * 1.5, 2.5 + Math.random() * 2);
+        }
+        if (Math.random() < puffChance) addPuff(bl.x + (Math.random() - 0.5) * 0.08, 0.72, -bl.z + 0.6, 0.12, 0.45);
+        if (rn >= CAP.rockets) continue;
+        d.position.set(bl.x, 0.72, -bl.z);
+        // Slight wobble in flight.
+        d.rotation.set(Math.sin(bl.travelled * 3 + bl.x) * 0.06, Math.sin(bl.travelled * 2.3) * 0.06, bl.travelled * 6);
+        d.scale.set(1.9, 1.9, 1.9);
+        d.updateMatrix();
+        rockets.setMatrixAt(rn++, d.matrix);
+        d.scale.set(1, 1, 1);
+        continue;
+      }
       if (bl.tank) {
         if (sn >= 64) continue;
         d.position.set(bl.x, 0.95, -bl.z);
@@ -167,6 +216,26 @@ export function createActors(scene) {
       bullets.setMatrixAt(n++, d.matrix);
     }
     bullets.count = n;
+    trails.count = trailHeads.count = tn;
+    rockets.count = rn;
+    let pn = 0;
+    for (let i = puffs.length - 1; i >= 0; i--) {
+      const p = puffs[i];
+      p.life -= dt;
+      if (p.life <= 0) { puffs.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.z += p.vz * dt; p.y += 0.6 * dt;
+      p.vx *= 0.9; p.vz *= 0.9;
+      const k = 1 - p.life / p.max;
+      // Grows as it spreads, shrinks away at the end.
+      const sc = p.size * (1 + 2.2 * k) * Math.min(1, p.life * 4);
+      d.position.set(p.x, p.y, p.z);
+      d.rotation.set(0, 0, 0);
+      d.scale.set(sc, sc, sc);
+      d.updateMatrix();
+      smoke.setMatrixAt(pn++, d.matrix);
+    }
+    smoke.count = pn;
+    d.scale.set(1, 1, 1);
     shells.count = sn;
     flashes.count = f;
     shadows.count = sh;

@@ -184,6 +184,17 @@ export function weaponGeometry(id) {
   }
 }
 
+// Bazooka rocket in flight: olive body, dark warhead at the front (-z), fins and an exhaust flame at the back.
+export function rocketGeometry() {
+  const olive = 0x5f6f32, dark = 0x2b2b2b, flame = 0xffb02e;
+  return mergeColored([
+    part(tube(0.07, 0.07, 0.42, 8), olive, 0, 0, 0, Math.PI / 2),
+    part(new ConeGeometry(0.08, 0.2, 8), dark, 0, 0, -0.31, -Math.PI / 2),
+    part(box(0.02, 0.26, 0.12), dark, 0, 0, 0.17), part(box(0.26, 0.02, 0.12), dark, 0, 0, 0.17),
+    part(new ConeGeometry(0.07, 0.26, 7), flame, 0, 0, 0.36, Math.PI / 2),
+  ]);
+}
+
 export function rockGeometry() {
   return mergeColored([part(new IcosahedronGeometry(0.6, 0), 0x9c7b5b, 0, 0.25, 0, 0, 0, 0, 1)]).scale(1, 0.6, 1);
 }

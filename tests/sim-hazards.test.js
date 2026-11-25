@@ -78,3 +78,15 @@ test('each shot moves a gate less when the squad is big', () => {
   assert.equal(rise(2), 1);
   assert.ok(rise(60) < 0.2, `rise ${rise(60)}`);
 });
+test('each bullet knows which weapon fired it (the renderer draws them differently)', () => {
+  for (const w of ['rifle', 'sniper', 'bazooka']) {
+    const g = createGame(emptyLevel()); g.squad.weapon = w; g.soldiers[0].cooldown = 0; run(g, 1 / 60);
+    assert.ok(g.bullets.length > 0 && g.bullets.every((b) => b.weapon === w), w);
+  }
+});
+test('a bazooka rocket reports where it exploded', () => {
+  const g = createGame(emptyLevel({ zombies: [zombie(1, 0, 10, 'walker', 5)] }));
+  g.squad.weapon = 'bazooka'; g.soldiers[0].cooldown = 0; run(g, 0.6);
+  const [boom] = eventsOf(g, 'rocketBlast');
+  assert.ok(boom && Math.abs(boom.x) < 0.5 && boom.z > 8 && boom.z < 11 && boom.r > 0);
+});
