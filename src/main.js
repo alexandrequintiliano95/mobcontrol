@@ -9,7 +9,7 @@ import { loadSave, saveSave, MAX_LEVEL } from './storage.js';
 import { newPickupAhead } from './discovery.js';
 import { advanceClock } from './clock.js';
 import { WEAPONS } from './config.js';
-import { createAudio } from './audio.js';
+import { createAudio, shotSound } from './audio.js';
 import { createHaptics, createWakeLock } from './device.js';
 import { registerServiceWorker, setupInstall } from './pwa.js';
 
@@ -70,8 +70,8 @@ const hooks = {
       if (fb[1]) haptics.buzz(fb[1]);
     }
   },
-  onShots(shots, hits) {
-    audio.play('shot');
+  onShots(shots, hits, weapon) {
+    audio.play(shotSound(weapon));
     if (hits > 0) audio.play('hit');
   },
   onStart() { wakeLock.acquire(); },
@@ -178,7 +178,7 @@ function step(dt) {
 }
 
 function afterSteps(events) {
-  if (game.shots > lastShots) { hooks.onShots(game.shots - lastShots, game.hits - lastHits); }
+  if (game.shots > lastShots) { hooks.onShots(game.shots - lastShots, game.hits - lastHits, game.squad.weapon); }
   lastShots = game.shots;
   lastHits = game.hits;
   for (const e of events) {

@@ -12,7 +12,15 @@ export function createLimiter(gaps) {
 }
 
 // Bazooka rockets land all the time with a big squad: one soft boom every 2 seconds is enough.
-export const GAPS = { shot: 0.07, hit: 0.05, zombieDown: 0.06, soldierDown: 0.08, recruit: 0.05, rocketBoom: 2 };
+export const GAPS = {
+  shot: 0.07, hit: 0.05, zombieDown: 0.06, soldierDown: 0.08, recruit: 0.05, rocketBoom: 2,
+  // Shot sounds per weapon: the gap sets how often the squad's fire is heard (fast guns rattle, heavy ones thump).
+  shot_rifle: 0.09, shot_smg: 0.06, shot_ak47: 0.075, shot_minigun: 0.045,
+  shot_sniper: 0.4, shot_shotgun: 0.28, shot_bazooka: 0.45,
+};
+const SHOTS = new Set(['rifle', 'smg', 'ak47', 'minigun', 'sniper', 'shotgun', 'bazooka']);
+// Name of the shot sound for a weapon (falls back to the generic one).
+export const shotSound = (weapon) => (SHOTS.has(weapon) ? `shot_${weapon}` : 'shot');
 
 export function createAudio() {
   let ctx = null, master = null, noiseBuf = null;
@@ -64,8 +72,39 @@ export function createAudio() {
     src.stop(t + dur + 0.02);
   }
 
+  // Rising band-passed noise: something leaving fast.
+  function whoosh(dur, vol) {
+    const t = ctx.currentTime;
+    const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    src.buffer = noiseBuf;
+    f.type = 'bandpass';
+    f.frequency.setValueAtTime(300, t);
+    f.frequency.exponentialRampToValueAtTime(2200, t + dur);
+    f.Q.value = 2;
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.25);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    src.connect(f).connect(g).connect(master);
+    src.start(t, Math.random() * 0.5);
+    src.stop(t + dur + 0.02);
+  }
+
   const SOUNDS = {
     shot: () => { noise(0.05, 0.18, 3800, 2); tone('square', 900, 300, 0.04, 0.04); },
+    // Rifle: the classic short crack.
+    shot_rifle: () => { noise(0.05, 0.18, 3800, 2); tone('square', 900, 300, 0.04, 0.04); },
+    // SMG: lighter, higher tick.
+    shot_smg: () => { noise(0.035, 0.13, 5200, 2); tone('square', 1300, 600, 0.03, 0.03); },
+    // AK-47: deeper, punchier bang.
+    shot_ak47: () => { noise(0.07, 0.22, 2400, 1.5); tone('square', 420, 140, 0.06, 0.06); },
+    // Minigun: fast low buzz that blends into a "brrrt".
+    shot_minigun: () => { noise(0.03, 0.12, 1800, 1); tone('sawtooth', 160, 110, 0.03, 0.04); },
+    // Sniper: a loud dry crack with a short echo.
+    shot_sniper: () => { noise(0.09, 0.35, 6500, 1); tone('square', 1500, 200, 0.06, 0.07); noise(0.3, 0.08, 1400, 0.7, 0.08); },
+    // Shotgun: a fat "pá" with a low thump.
+    shot_shotgun: () => { noise(0.18, 0.32, 1500, 0.8); tone('sine', 150, 60, 0.14, 0.18); },
+    // Bazooka: "fuup", a whoosh of the rocket leaving the tube (the blast is rocketBoom).
+    shot_bazooka: () => { whoosh(0.35, 0.16); tone('sine', 110, 70, 0.12, 0.1); },
     hit: () => tone('triangle', 520, 380, 0.04, 0.05),
     cannon: () => { noise(0.25, 0.45, 900, 1.2); tone('sine', 90, 45, 0.25, 0.3); },
     // Soft, low "tuumm": a deep sine drop with a muffled rumble.
